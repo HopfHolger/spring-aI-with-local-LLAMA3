@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:hx-on="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>KI Wissen Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FIX: Korrekter HTMX Pfad -->
+    <script src="https://unpkg.com/htmx.org"></script>
+
+    <style>
+        htmx-swapping {
+            opacity: 0;
+            transition: opacity 1s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+<div class="max-w-4xl mx-auto space-y-8">
+
+    <!-- Bereich 1: Upload -->
+    <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">Neues Wissen hinzufügen</h2>
+        <!-- FIX: Pfad mit / am Anfang -->
+        <form hx-post="/admin/upload"
+              hx-encoding="multipart/form-data"
+              hx-target="#upload-status"
+              hx-on::after-request="if(event.detail.successful) { this.reset(); htmx.trigger('body', 'updateList'); }">
+
+            <div class="flex items-center gap-4">
+                <input type="file" name="file" accept=".pdf" class="border p-2 rounded w-full">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                    Hochladen
+                </button>
+            </div>
+
+            <div id="upload-status" class="mt-2 text-sm font-medium"></div>
+        </form>
+    </div>
+
+    <!-- Bereich 2: Dokumentenliste -->
+    <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">KI-Gedächtnis</h2>
+        <!-- FIX: hx-trigger hört auf das Body-Event -->
+        <div id="doc-list-wrapper"
+             hx-get="/admin/list"
+             hx-trigger="load, updateList from:body">
+            <div id="doc-list" th:fragment="docTable">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b">
+                <tr>
+                    <th class="p-3">Dateiname</th>
+                    <th class="p-3">Chunks</th>
+                    <th class="p-3">Zuletzt aktualisiert</th>
+                    <th class="p-3">Aktion</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="doc : ${docs}" class="border-b hover:bg-gray-50">
+                    <td class="p-3 font-medium" th:text="${doc.fileName}"></td>
+                    <td class="p-3" th:text="${doc.chunkCount}"></td>
+                    <td class="p-3 text-sm text-gray-500"
+                        th:text="${doc.lastUpdated != null ? #strings.substring(doc.lastUpdated,0,10) : 'Kein Datum'}">
+                    </td>
+                    <td class="p-3 text-right">
+                        <button class="text-red-500 hover:text-red-700 font-medium"
+                                th:attr="hx-delete='/admin/documents/' + ${doc.fileName}"
+                                hx-confirm="Möchtest du dieses Dokument wirklich löschen?"
+                                hx-target="closest tr"
+                                hx-swap="outerHTML swap:1s">
+                            Löschen
+                        </button>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(docs)}">
+                    <td colspan="4" class="p-8 text-center text-gray-400 italic">Noch kein Wissen geladen...</td>
+                </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+    <!-- Bereich 3: Chat Interface -->
+    <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-500">
+        <h2 class="text-xl font-bold mb-4">Fragen an dein Wissen</h2>
+
+        <!-- Hier landet die Antwort der KI -->
+        <div id="chat-response" class="min-h-[100px] p-4 mb-4 bg-gray-50 rounded border prose max-w-none">
+            <p class="text-gray-400 italic">Stelle eine Frage zu deinen Dokumenten...</p>
+        </div>
+
+        <form hx-post="/admin/chat"
+              hx-target="#chat-response"
+              hx-indicator="#chat-loading"
+              hx-on::after-request="this.querySelector('input').value=''">
+            <div class="flex gap-2">
+                <input type="text" name="question" required
+                       class="flex-1 border p-2 rounded shadow-sm focus:ring-blue-500"
+                       placeholder="Z.B.: Wie skaliere ich die Datenbank?">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                    Fragen
+                </button>
+            </div>
+            <!-- Lade-Indikator für die KI-Gedenksekunde -->
+            <div id="chat-loading" class="htmx-indicator mt-2 text-blue-600 flex items-center gap-2">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span class="text-sm font-medium">KI analysiert Dokumente...</span>
+            </div>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>

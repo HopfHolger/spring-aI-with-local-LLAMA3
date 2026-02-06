@@ -10,10 +10,10 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.reactive.result.method.annotation.ResponseEntityExceptionHandler;
 
-@RestControllerAdvice
+//@RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(IllegalArgumentException.class)
+    //@ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail problemDetailillegalArgumentException(IllegalArgumentException e, WebRequest request) {
         ProblemDetail problemDetail
                 = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -22,7 +22,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problemDetail;
     }
 
-    @ExceptionHandler(Exception.class)
+    //@ExceptionHandler(Exception.class)
     public ProblemDetail problemDetailiException(Exception e, WebRequest request) {
         ProblemDetail problemDetail
                 = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());

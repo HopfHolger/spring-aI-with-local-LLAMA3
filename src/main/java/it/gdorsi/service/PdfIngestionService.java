@@ -1,7 +1,9 @@
 package it.gdorsi.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
@@ -13,8 +15,14 @@ import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import it.gdorsi.dao.IngestResult;
 import jakarta.annotation.PostConstruct;
 
+/**
+ * Ingest KI (oft auch Data Ingestion für KI) bezeichnet den automatisierten
+ * Prozess des Sammelns, Bereinigens, Strukturierens und Einspielens
+ * von Daten (Dateien, Dokumente, Datenbanken) in ein KI-System oder eine Datenbank.
+ */
 @Service
 public class PdfIngestionService {
 
@@ -30,9 +38,14 @@ public class PdfIngestionService {
 
     /**
      * update und insert
+     *
      * @param pdfResource
      */
-    public void loadPdf(Resource pdfResource) {
+    public IngestResult loadPdf(Resource pdfResource) {
+
+        long startTime = System.currentTimeMillis();
+        int newCount = 0;
+        int updateCount = 0;
 
         // Tika ist wesentlich toleranter gegenüber fehlenden System-Fonts
         TikaDocumentReader tikaReader = new TikaDocumentReader(pdfResource);
@@ -67,6 +80,8 @@ public class PdfIngestionService {
 
         String fileName = pdfResource.getFilename();
 
+        List<String> currentChunkIds = new ArrayList<>();
+
         // call jetzt idempotent - vorher delete unnötig, gleicher hash kommt nie vor insert wird update
         for (Document doc : documents) {
             doc.getMetadata().put("file_name", pdfResource.getFilename()); // besser zum Löschen
@@ -76,6 +91,7 @@ public class PdfIngestionService {
 
             // WICHTIG: UUID aus dem String generieren (Postgres pgvector nutzt meist UUIDs)
             UUID deterministicId = UUID.nameUUIDFromBytes(customId.getBytes());
+            currentChunkIds.add(deterministicId.toString());
 
             Document docWithFixedId = new Document(
                     deterministicId.toString(),
@@ -84,6 +100,7 @@ public class PdfIngestionService {
             );
 
             if (exists(docWithFixedId.getId())) {
+                updateCount++;
                 long oldTime = (long) docWithFixedId.getMetadata().get("ingested_at");
                 System.out.println("Update: Alter Zeitstempel war " + oldTime);
 
@@ -91,12 +108,36 @@ public class PdfIngestionService {
                 vectorStore.accept(List.of(docWithFixedId));
                 System.out.println("Ingestion of " + fileName + " finished. Chunks" + documents.size() + " update.");
             } else {
+                newCount++;
                 docWithFixedId.getMetadata().put("ingested_at", System.currentTimeMillis());
                 vectorStore.accept(List.of(docWithFixedId));
                 System.out.println("Ingestion of " + fileName + " finished. Chunks" + documents.size() + " insert.");
             }
-
         }
+
+        // 3. CLEANUP: Lösche alle Chunks dieses Files, die NICHT in currentChunkIds sind
+        // Das entfernt "verwaiste" Chunks, wenn das PDF gekürzt wurde.
+        if (!currentChunkIds.isEmpty()) {
+            // Wir bauen ein Array aus den UUIDs für den Postgres-Operator '= ANY' oder 'NOT IN'
+            String[] idArray = currentChunkIds.toArray(new String[0]);
+
+            String sqlCleanup = """
+                    DELETE FROM vector_store 
+                    WHERE metadata->>'file_name' = ? 
+                    AND NOT (id = ANY(?::uuid[]))
+                    """;
+
+            int deletedLeichen = jdbcTemplate.update(sqlCleanup, fileName, idArray);
+            System.out.println("Cleanup: " + deletedLeichen + " verwaiste Chunks entfernt.");
+        }
+
+        return new IngestResult(
+                pdfResource.getFilename(),
+                documents.size(),
+                newCount,
+                updateCount,
+                System.currentTimeMillis() - startTime
+        );
     }
 
     public boolean exists(String docId) {
@@ -110,36 +151,7 @@ public class PdfIngestionService {
         }
     }
 
-    /**
-     * Kein query Deprecation: Wir nutzen den modernen SearchRequest.builder().
-     * Metadaten-Fokus: Wir nutzen die JSONB-Power von Postgres. Die Suche nach file_name in den Metadaten ist extrem schnell.
-     * Vollständigkeit: Ein PDF wird in viele Chunks zerlegt. Dieser Weg findet sie alle, egal wie viele es sind.
-     * @param fileName
-     */
-    public void deleteByFileName(String fileName) {
-        // 1. Erstelle eine Filter-Expression (keine semantische Suche!)
-        var filterExpression = new FilterExpressionBuilder()
-                .eq("file_name", fileName) // Name muss exakt mit Metadata-Key übereinstimmen
-                .build();
 
-        // 2. Nutze einen SearchRequest NUR mit Filter (TopK sehr hoch ansetzen)
-        SearchRequest searchRequest = SearchRequest.builder()
-                .query("") // Leerer Query, da wir nur filtern wollen
-                .filterExpression(filterExpression)
-                .topK(10000) // Sicherstellen, dass wir alle Chunks erwischen
-                .build();
-
-        List<Document> docsToDelete = vectorStore.similaritySearch(searchRequest);
-
-        // 3. Löschen, falls etwas gefunden wurde
-        if (!docsToDelete.isEmpty()) {
-            List<String> ids = docsToDelete.stream()
-                    .map(Document::getId)
-                    .toList();
-            vectorStore.delete(ids);
-            System.out.println(ids.size() + " Chunks für " + fileName + " gelöscht.");
-        }
-    }
 
     private String sanitizeText(String text) {
         if (text == null) return null;

@@ -4,9 +4,11 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import reactor.core.publisher.Flux;
 
@@ -46,7 +48,7 @@ import reactor.core.publisher.Flux;
  * ohne dass du den Code dafür schreiben musst.
  */
 
-@RestController
+@Controller
 public class ChatController {
 
     // Hier kannst du dein eigenes Chat-Modell/Client einbinden (z.B. Mistral)
@@ -59,13 +61,18 @@ public class ChatController {
                 .build();
     }
 
-    @GetMapping("/ask")
-    public String ask(@RequestParam String question) {
-        // Der Advisor merkt: "Ah, eine Frage! Ich schaue erst in der DB nach Fakten ..."
-        return chatClient.prompt()
-                .user(question)
-                .call()
-                .content();
+    @PostMapping("/admin/chat")
+    @ResponseBody
+    public String chat(@RequestParam("question") String question) {
+        try {
+            // Der Advisor übernimmt: Vektorsuche in PG + Kontext-Prompt + Ollama Call
+            return chatClient.prompt()
+                    .user(question)
+                    .call()
+                    .content();
+        } catch (Exception e) {
+            return "❌ Fehler bei der KI-Anfrage: " + e.getMessage();
+        }
     }
 
 

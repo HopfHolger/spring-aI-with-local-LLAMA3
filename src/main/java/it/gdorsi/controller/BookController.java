@@ -3,9 +3,10 @@ package it.gdorsi.controller;
 import it.gdorsi.dao.Author;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+@Controller
 @RequestMapping("/books")
 public class BookController {
 
