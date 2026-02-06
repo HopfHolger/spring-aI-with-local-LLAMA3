@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: ankane/pgvector:latest  # Spezielles Image mit vorinstalliertem pgvector
+    container_name: pgvector-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=ai_db
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
