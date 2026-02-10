@@ -48,7 +48,7 @@ public class PdfEinlesenController {
 
     @PostMapping("/admin/upload/trigger")
     @ResponseBody // Antwortet direkt für HTMX
-    public String handleFileUploadTrigger(@RequestParam("file") MultipartFile file) throws Exception {
+    public String handleFileUploadTrigger(@RequestParam("file") MultipartFile file) {
         ingestionService.loadPdf(file.getResource());
         // Triggert ein Event im Frontend, damit die Liste aktualisiert wird
         return "";

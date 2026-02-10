@@ -10,6 +10,9 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.reactive.result.method.annotation.ResponseEntityExceptionHandler;
 
+/**
+ * Durch das Frontend mit Thymeleaf funktioniert das ProblemDetail nicht mehr.
+ */
 //@RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 

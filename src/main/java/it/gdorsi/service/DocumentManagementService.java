@@ -26,8 +26,7 @@ public class DocumentManagementService {
     public List<DocumentOverview> getAllDocuments() {
         // Wir gruppieren nach dem file_name in den Metadaten
         String sql = """
-            SELECT 
-                metadata->>'file_name' as fileName,
+            SELECT metadata->>'file_name' as fileName,
                 count(*) as chunks,
                 max(metadata->>'ingested_at') as lastUpdate
             FROM vector_store
@@ -47,9 +46,9 @@ public class DocumentManagementService {
      * Metadaten-Fokus: Wir nutzen die JSONB-Power von Postgres. Die Suche nach file_name in den Metadaten ist extrem schnell.
      * Vollständigkeit: Ein PDF wird in viele Chunks zerlegt. Dieser Weg findet sie alle, egal wie viele es sind.
      *
-     * @param fileName
+     * @param fileName es wird nach Name gesucht
      */
-    public void deleteByFileName(String fileName) {
+    public void deleteByFileName(final String fileName) {
         // 1. Erstelle eine Filter-Expression (keine semantische Suche!)
         var filterExpression = new FilterExpressionBuilder()
                 .eq("file_name", fileName) // Name muss exakt mit Metadata-Key übereinstimmen
@@ -65,12 +64,17 @@ public class DocumentManagementService {
         List<Document> docsToDelete = vectorStore.similaritySearch(searchRequest);
 
         // 3. Löschen, falls etwas gefunden wurde
-        if (!docsToDelete.isEmpty()) {
-            List<String> ids = docsToDelete.stream()
-                    .map(Document::getId)
-                    .toList();
-            vectorStore.delete(ids);
-            System.out.println(ids.size() + " Chunks für " + fileName + " gelöscht.");
+        if (!(docsToDelete != null && docsToDelete.isEmpty())) {
+            List<String> ids = null;
+            if (docsToDelete != null) {
+                ids = docsToDelete.stream()
+                        .map(Document::getId)
+                        .toList();
+            }
+            if (ids != null) {
+                vectorStore.delete(ids);
+                System.out.println(ids.size() + " Chunks für " + fileName + " gelöscht.");
+            }
         }
     }
 }

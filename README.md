@@ -1,7 +1,8 @@
 # Spring AI with local LLAMA3
 
 ## Overview
-This demo demonstrates the integration of a local LLama3 model for handling JSON responses within the Spring AI framework, positioning the model as a 'business logic' executor. This provides a starting point specifically tailored for simple artificial intelligence workflows, using Java and Spring AI.
+Der Anfang dieses Projketes war ein git-Projekt https://github.com/gdorsi44/spring-aI-with-local-LLAMA3 welches ich dann erweitert habe.
+"This demo demonstrates the integration of a local LLama3 model for handling JSON responses within the Spring AI framework, positioning the model as a 'business logic' executor. This provides a starting point specifically tailored for simple artificial intelligence workflows, using Java and Spring AI."
 
 
 ## Prerequisites
@@ -39,21 +40,21 @@ Ziel eine funktionierende Kette:Java/Spring AI \(\rightarrow \) Ollama (mxbai-em
    
 5. **Access the postgress mit PostgreSQL + pgvector **:
    ```bash
-      docker-compose up -d
+   docker-compose up -d
 
 Pro-Tipp: Wenn du Ressourcen sparen willst, lerne das Modell mxbai-embed-large kennen (mit ollama pull mxbai-embed-large). Es ist speziell für Embeddings optimiert und nutzt oft nur 1024 Dimensionen, was deine Datenbank-Indizes deutlich schneller macht als das riesige Mistral-Modell.
 Das ist ein kritischer Punkt: Wenn die Dimensionen deines Embedding-Modells nicht exakt mit der Spaltendefinition in deiner PostgreSQL übereinstimmen, wird die Datenbank jeden Schreib- oder Suchversuch mit einem Fehler abbrechen.
 
 
-1. Die VektorDimensionen deiner KI prüfen
-   Jedes Modell erzeugt Vektoren mit einer festen Länge. Hier sind die gängigsten Werte:
+1. Die VektorDimensionen deiner KI prüfen:
+    Jedes Modell erzeugt Vektoren mit einer festen Länge. Hier sind die gängigsten Werte:
    OpenAI text-embedding-3-small (Standard): 1536 Dimensionen.
    OpenAI text-embedding-3-large: 3072 Dimensionen.
    Ollama mit mxbai-embed-large: 1024 Dimensionen.
    HuggingFace all-MiniLM-L6-v2: 384 Dimensionen.
 
    Was bedeutet "1536 Dimensionen"?
-   Modelle wie OpenAIs text-embedding-ada-002 oder text-embedding-3-small wandeln Wörter, Sätze oder ganze Absätze in eine Liste von exakt 1536 Zahlen (Fließkommawerten) um.
+    Modelle wie OpenAIs text-embedding-ada-002 oder text-embedding-3-small wandeln Wörter, Sätze oder ganze Absätze in eine Liste von exakt 1536 Zahlen (Fließkommawerten) um.
    Der Vektor: Diese Liste von Zahlen nennt man einen „Vektor“.
    Der Raum: Man kann sich das so vorstellen, dass jeder Text als ein Punkt in einem riesigen, 1536-dimensionalen Koordinatensystem platziert wird.
    Die Bedeutung: Jede dieser 1536 Dimensionen steht theoretisch für ein bestimmtes abstraktes Merkmal oder Konzept. Ein Text über „Hunde“ landet in diesem Raum näher bei „Welpen“ als bei „Backofen“, weil ihre Zahlenwerte in diesen 1536 Dimensionen ähnlicher sind.

@@ -3,14 +3,11 @@ package it.gdorsi.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -39,7 +36,7 @@ public class PdfIngestionService {
     /**
      * update und insert
      *
-     * @param pdfResource
+     * @param pdfResource PDF
      */
     public IngestResult loadPdf(Resource pdfResource) {
 
@@ -48,14 +45,14 @@ public class PdfIngestionService {
         int updateCount = 0;
 
         // Tika ist wesentlich toleranter gegenüber fehlenden System-Fonts
-        TikaDocumentReader tikaReader = new TikaDocumentReader(pdfResource);
+        final TikaDocumentReader tikaReader = new TikaDocumentReader(pdfResource);
 
         // 2. Text splitten (wichtig, damit die KI nicht überfordert wird)
         // TokenTextSplitter achtet darauf, dass Sinnzusammenhänge erhalten bleiben
         // In deinem PdfIngestionService
         // vermeiden 500] Internal Server Error - {"error":"the input length exceeds the context length"}
         // Modelle wie mxbai-embed-large haben meist ein Limit von 512 oder 1024 Tokens. Ein typisches PDF-Dokument hat aber tausende.
-        TokenTextSplitter splitter = new TokenTextSplitter(
+        final TokenTextSplitter splitter = new TokenTextSplitter(
                 300,  // chunkLength: Von 500 auf 300 runter (Sicherheitsmarge!)
                 50,   // chunkOverlap: Kleinerer Overlap spart Platz
                 5,    // keepAdjustmentThreshold
@@ -70,14 +67,6 @@ public class PdfIngestionService {
             System.err.println("WARNUNG: Keine Texte im PDF gefunden!");
         }
 
-        // Sanitize: Ungültige Unicode-Zeichen entfernen
-        List<Document> cleanDocuments = documents.stream()
-                .map(doc -> {
-                    String cleanContent = sanitizeText(doc.getContent());
-                    return new Document(doc.getId(), cleanContent, doc.getMetadata());
-                })
-                .toList();
-
         String fileName = pdfResource.getFilename();
 
         List<String> currentChunkIds = new ArrayList<>();
@@ -87,17 +76,22 @@ public class PdfIngestionService {
             doc.getMetadata().put("file_name", pdfResource.getFilename()); // besser zum Löschen
             doc.getMetadata().put("ingested_at", System.currentTimeMillis()); // vermeidet neuanlage
             // Wir erzeugen eine ID aus Dateiname + Inhalt-Hash
-            String customId = pdfResource.getFilename() + doc.getContent().hashCode();
+            final String customId = pdfResource.getFilename() + (doc.getText() != null ? doc.getText().hashCode() : 0);
 
             // WICHTIG: UUID aus dem String generieren (Postgres pgvector nutzt meist UUIDs)
-            UUID deterministicId = UUID.nameUUIDFromBytes(customId.getBytes());
+            final UUID deterministicId = UUID.nameUUIDFromBytes(customId.getBytes());
             currentChunkIds.add(deterministicId.toString());
 
-            Document docWithFixedId = new Document(
-                    deterministicId.toString(),
-                    doc.getContent(),
-                    doc.getMetadata()
-            );
+            Document docWithFixedId;
+            if (doc.getText() != null) {
+                docWithFixedId = new Document(
+                        deterministicId.toString(),
+                        doc.getText(),
+                        doc.getMetadata()
+                );
+            } else {
+                continue;
+            }
 
             if (exists(docWithFixedId.getId())) {
                 updateCount++;
@@ -121,9 +115,8 @@ public class PdfIngestionService {
             // Wir bauen ein Array aus den UUIDs für den Postgres-Operator '= ANY' oder 'NOT IN'
             String[] idArray = currentChunkIds.toArray(new String[0]);
 
-            String sqlCleanup = """
-                    DELETE FROM vector_store 
-                    WHERE metadata->>'file_name' = ? 
+            final String sqlCleanup = """
+                    DELETE FROM vector_store WHERE metadata->>'file_name' = ? 
                     AND NOT (id = ANY(?::uuid[]))
                     """;
 
@@ -140,10 +133,10 @@ public class PdfIngestionService {
         );
     }
 
-    public boolean exists(String docId) {
+    public boolean exists(final String docId) {
         try {
             // Wir nutzen 'EXISTS' und einen expliziten Cast, das ist performanter
-            String sql = "SELECT EXISTS(SELECT 1 FROM vector_store WHERE id = CAST(? AS uuid))";
+            final String sql = "SELECT EXISTS(SELECT 1 FROM vector_store WHERE id = CAST(? AS uuid))";
             return jdbcTemplate.queryForObject(sql, Boolean.class, docId);
         } catch (Exception e) {
             System.err.println("Fehler beim ID-Check: " + e.getMessage());
@@ -151,14 +144,6 @@ public class PdfIngestionService {
         }
     }
 
-
-
-    private String sanitizeText(String text) {
-        if (text == null) return null;
-        // Entfernt alle Zeichen, die nicht in die Basic Multilingual Plane passen
-        // und SQL-Probleme verursachen könnten (Surrogates)
-        return text.replaceAll("[\\uD800-\\uDFFF]", "");
-    }
 
     @PostConstruct
     public void init() {
