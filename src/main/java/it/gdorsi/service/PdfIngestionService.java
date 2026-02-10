@@ -27,7 +27,6 @@ public class PdfIngestionService {
 
     private final JdbcTemplate jdbcTemplate;
 
-    // Wir injizieren die PDF via Resource-Loader (z.B. aus classpath oder file)
     public PdfIngestionService(VectorStore vectorStore, JdbcTemplate jdbcTemplate) {
         this.vectorStore = vectorStore;
         this.jdbcTemplate = jdbcTemplate;
