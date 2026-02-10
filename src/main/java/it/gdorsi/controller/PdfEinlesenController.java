@@ -64,16 +64,7 @@ public class PdfEinlesenController {
                     .body("<div class='text-red-600'>❌ Fehler: leeres File </div>");
         }
 
-        try {
-            // MultipartFile in Resource umwandeln für deinen Service
-            Resource resource = file.getResource();
-            PdfIngestResult result = ingestionService.loadPdf(resource);
-
-            redirectAttributes.addFlashAttribute("message",
-                    "Erfolg! " + result.fileName() + " wurde mit " + result.totalChunks() + " Chunks eingelesen.");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("message", "Fehler: " + e.getMessage());
-        }
+        multipartInResource(file, redirectAttributes);
 
         try {
 
@@ -84,6 +75,19 @@ public class PdfEinlesenController {
         } catch (Exception e) {
             return ResponseEntity.status(500)
                     .body("<div class='text-red-600'>❌ Fehler: " + e.getMessage() + "</div>");
+        }
+    }
+
+    private void multipartInResource(MultipartFile file, RedirectAttributes redirectAttributes) {
+        try {
+            // MultipartFile in Resource umwandeln für den Service
+            final Resource resource = file.getResource();
+            PdfIngestResult result = ingestionService.loadPdf(resource);
+
+            redirectAttributes.addFlashAttribute("message",
+                    "Erfolg! " + result.fileName() + " wurde mit " + result.totalChunks() + " Chunks eingelesen.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("message", "Fehler: " + e.getMessage());
         }
     }
 }
