@@ -12,7 +12,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import it.gdorsi.dao.IngestResult;
+import it.gdorsi.dao.PdfIngestResult;
 import jakarta.annotation.PostConstruct;
 
 /**
@@ -37,7 +37,7 @@ public class PdfIngestionService {
      *
      * @param pdfResource PDF
      */
-    public IngestResult loadPdf(Resource pdfResource) {
+    public PdfIngestResult loadPdf(Resource pdfResource) {
 
         long startTime = System.currentTimeMillis();
         int newCount = 0;
@@ -123,7 +123,7 @@ public class PdfIngestionService {
             System.out.println("Cleanup: " + deletedLeichen + " verwaiste Chunks entfernt.");
         }
 
-        return new IngestResult(
+        return new PdfIngestResult(
                 pdfResource.getFilename(),
                 documents.size(),
                 newCount,

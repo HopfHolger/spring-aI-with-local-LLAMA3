@@ -22,7 +22,7 @@ package it.gdorsi.dao;
  * @param updatedChunks
  * @param durationMillis
  */
-public record IngestResult(
+public record PdfIngestResult(
         String fileName,
         int totalChunks,
         int newChunks,

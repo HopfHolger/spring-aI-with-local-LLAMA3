@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import it.gdorsi.dao.IngestResult;
+import it.gdorsi.dao.PdfIngestResult;
 import it.gdorsi.service.DocumentManagementService;
 import it.gdorsi.service.PdfIngestionService;
 
@@ -67,7 +67,7 @@ public class PdfEinlesenController {
         try {
             // MultipartFile in Resource umwandeln für deinen Service
             Resource resource = file.getResource();
-            IngestResult result = ingestionService.loadPdf(resource);
+            PdfIngestResult result = ingestionService.loadPdf(resource);
 
             redirectAttributes.addFlashAttribute("message",
                     "Erfolg! " + result.fileName() + " wurde mit " + result.totalChunks() + " Chunks eingelesen.");
