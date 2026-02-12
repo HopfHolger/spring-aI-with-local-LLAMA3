@@ -68,8 +68,8 @@ public class ChatController {
      *     .advisors(a -> a.clear()) // Entfernt die Default-Advisoren für diesen einen Call
      *     .user("Hallo, wer bist du?")
      *     .call();
-     * @param builder
-     * @param vectorStore
+     * @param builder chatClient Builder
+     * @param vectorStore vectorStore Postgres
      */
     public ChatController(ChatClient.Builder builder, VectorStore vectorStore, ChatMemory chatMemory) {
         // Immutability: Der Advisor ist nach dem .build() unveränderlich,
@@ -93,9 +93,9 @@ public class ChatController {
      *     String conversationId = request.getChatId();
      *     ...
      * }
-     * @param question
-     * @param session
-     * @return
+     * @param question usewr prompt/question
+     * @param session HttpSession
+     * @return Antwort vom ChatClient
      */
     @PostMapping("/admin/chat")
     @ResponseBody

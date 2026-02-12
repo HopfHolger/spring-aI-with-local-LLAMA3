@@ -37,10 +37,8 @@ public class AiStartTestConfig {
                 System.out.println(">>> Teste semantische Suche...");
                 var results = vectorStore.similaritySearch("Was ist das für ein Test?");
 
-                if (!(results != null && results.isEmpty())) {
-                    if (results != null) {
-                        System.out.println(">>> Suche erfolgreich! Gefunden: " + results.getFirst().getText());
-                    }
+                if (!results.isEmpty()) {
+                    System.out.println(">>> Suche erfolgreich! Gefunden: " + results.getFirst().getText());
                 }
 
                 System.out.println(">>> ENDE: KI-Infrastruktur ist BEREIT!");
@@ -61,10 +59,8 @@ public class AiStartTestConfig {
 
             // Sofortige Gegenprüfung im selben Code:
             var results = vectorStore.similaritySearch("Java");
-            if (results != null) {
-                results.forEach(d -> System.out.println("Gefunden ID in DB: " + d.getId()));
-                System.out.println("Gefundene Treffer in der DB: " + results.size());
-            }
+            results.forEach(d -> System.out.println("Gefunden ID in DB: " + d.getId()));
+            System.out.println("Gefundene Treffer in der DB: " + results.size());
 
         };
     }

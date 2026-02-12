@@ -17,7 +17,6 @@ public class AiConfig {
                 .distanceType(PgVectorStore.PgDistanceType.COSINE_DISTANCE)
                 .initializeSchema(true)
                 .build();
-
     }
 
 

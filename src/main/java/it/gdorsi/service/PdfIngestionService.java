@@ -113,8 +113,7 @@ public class PdfIngestionService {
             String[] idArray = currentChunkIds.toArray(new String[0]);
 
             final String sqlCleanup = """
-                    DELETE FROM vector_store WHERE metadata->>'file_name' = ? 
-                    AND NOT (id = ANY(?::uuid[]))
+                    DELETE FROM vector_store WHERE metadata->>'file_name' = ? AND NOT (id = ANY(?::uuid[]))
                     """;
 
             int deletedLeichen = jdbcTemplate.update(sqlCleanup, fileName, idArray);
@@ -134,7 +133,7 @@ public class PdfIngestionService {
         try {
             // Wir nutzen 'EXISTS' und einen expliziten Cast, das ist performanter
             final String sql = "SELECT EXISTS(SELECT 1 FROM vector_store WHERE id = CAST(? AS uuid))";
-            return jdbcTemplate.queryForObject(sql, Boolean.class, docId);
+            return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, Boolean.class, docId));
         } catch (Exception e) {
             System.err.println("Fehler beim ID-Check: " + e.getMessage());
             return false;

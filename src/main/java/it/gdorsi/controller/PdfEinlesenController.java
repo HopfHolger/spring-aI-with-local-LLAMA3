@@ -16,7 +16,7 @@ import it.gdorsi.service.DocumentManagementService;
 import it.gdorsi.service.PdfIngestionService;
 
 /**
- * @RestController erwartet, dass du Daten (JSON) zurückgibst,
+ * {@code @RestController} erwartet, dass du Daten (JSON) zurückgibst,
  * während @Controller nach HTML-Dateien im templates-Ordner sucht. - Thymeleaf
  */
 @Controller

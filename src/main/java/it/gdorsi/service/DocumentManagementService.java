@@ -26,13 +26,13 @@ public class DocumentManagementService {
     public List<DocumentOverview> getAllDocuments() {
         // Wir gruppieren nach dem file_name in den Metadaten
         String sql = """
-            SELECT metadata->>'file_name' as fileName,
-                count(*) as chunks,
-                max(metadata->>'ingested_at') as lastUpdate
-            FROM vector_store
-            GROUP BY metadata->>'file_name'
-            ORDER BY lastUpdate DESC
-            """;
+                SELECT metadata->>'file_name' as fileName,
+                    count(*) as chunks,
+                    max(metadata->>'ingested_at') as lastUpdate
+                FROM vector_store
+                GROUP BY metadata->>'file_name'
+                ORDER BY lastUpdate DESC
+                """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new DocumentOverview(
                 rs.getString("fileName"),
@@ -64,17 +64,16 @@ public class DocumentManagementService {
         List<Document> docsToDelete = vectorStore.similaritySearch(searchRequest);
 
         // 3. Löschen, falls etwas gefunden wurde
-        if (!(docsToDelete != null && docsToDelete.isEmpty())) {
-            List<String> ids = null;
-            if (docsToDelete != null) {
-                ids = docsToDelete.stream()
-                        .map(Document::getId)
-                        .toList();
-            }
-            if (ids != null) {
-                vectorStore.delete(ids);
-                System.out.println(ids.size() + " Chunks für " + fileName + " gelöscht.");
-            }
+        if (!docsToDelete.isEmpty()) {
+            List<String> ids
+                    = docsToDelete.stream()
+                    .map(Document::getId)
+                    .toList();
+
+            vectorStore.delete(ids);
+            System.out.println(ids.size() + " Chunks für " + fileName + " gelöscht.");
+
+
         }
     }
 }
