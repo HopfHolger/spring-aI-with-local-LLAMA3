@@ -1,9 +1,9 @@
 package it.gdorsi.controller;
 
-import java.util.List;
-
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import jakarta.servlet.http.HttpSession;
 import reactor.core.publisher.Flux;
 
 /**
@@ -70,22 +71,26 @@ public class ChatController {
      * @param builder
      * @param vectorStore
      */
-    public ChatController(ChatClient.Builder builder, VectorStore vectorStore) {
+    public ChatController(ChatClient.Builder builder, VectorStore vectorStore, ChatMemory chatMemory) {
         // Immutability: Der Advisor ist nach dem .build() unveränderlich,
         // was ihn Thread-sicher für den ChatClient macht.
         QuestionAnswerAdvisor advisor = QuestionAnswerAdvisor.builder(vectorStore)
                 .build();
+        MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         this.chatClient = builder
-                .defaultAdvisors(advisor)
+                .defaultAdvisors(advisor, chatMemoryAdvisor)
                 .build();
     }
 
     @PostMapping("/admin/chat")
     @ResponseBody
-    public String chat(@RequestParam("question") String question) {
+    public String chat(@RequestParam("question") String question, HttpSession session) {
+
         try {
             // Der Advisor übernimmt: Vektorsuche in PG + Kontext-Prompt + Ollama Call
             return chatClient.prompt()
+                    // Set advisor parameters at runtime
+                    .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, session.getId()))
                     .user(question)
                     .call()
                     .content();
