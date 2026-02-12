@@ -82,6 +82,21 @@ public class ChatController {
                 .build();
     }
 
+    /**
+     *
+     * Bei zustandslosen APIs (z. B. REST für Mobile Apps)
+     * sendet der Client oft selbst eine ID mit (z. B. eine UUID),
+     * um einen Chat-Thread zu identifizieren. So bleibst du unabhängig von Server-Sessions.
+     * @PostMapping("/ask")
+     * public String ask(@RequestBody ChatRequest request) {
+     *     // Der Client schickt z.B. eine chatId: "user-123-thread-456"
+     *     String conversationId = request.getChatId();
+     *     ...
+     * }
+     * @param question
+     * @param session
+     * @return
+     */
     @PostMapping("/admin/chat")
     @ResponseBody
     public String chat(@RequestParam("question") String question, HttpSession session) {
