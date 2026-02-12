@@ -1,7 +1,9 @@
 package it.gdorsi.controller;
 
+import java.util.List;
+
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -54,10 +56,27 @@ public class ChatController {
     // Hier kannst du dein eigenes Chat-Modell/Client einbinden (z.B. Mistral)
     private final ChatClient chatClient;
 
+    /**
+     * Der ChatClient wird im Konstruktor (oder einer @Bean-Methode) über den
+     * builder mit dem defaultAdvisor initialisierst, es wird jeder Aufruf
+     * dieses Clients automatisch die RAG-Logik (VectorStore-Abfrage) ausführen.
+     * <p>
+     * Falls du mal einen Call ohne Dokumenten-Kontext machen möchtest, kannst du einfach:
+     * java
+     * chatClient.prompt()
+     *     .advisors(a -> a.clear()) // Entfernt die Default-Advisoren für diesen einen Call
+     *     .user("Hallo, wer bist du?")
+     *     .call();
+     * @param builder
+     * @param vectorStore
+     */
     public ChatController(ChatClient.Builder builder, VectorStore vectorStore) {
-        // Wir "registrieren" das Wissen einmalig im Client
+        // Immutability: Der Advisor ist nach dem .build() unveränderlich,
+        // was ihn Thread-sicher für den ChatClient macht.
+        QuestionAnswerAdvisor advisor = QuestionAnswerAdvisor.builder(vectorStore)
+                .build();
         this.chatClient = builder
-                .defaultAdvisors(new QuestionAnswerAdvisor(vectorStore))
+                .defaultAdvisors(advisor)
                 .build();
     }
 

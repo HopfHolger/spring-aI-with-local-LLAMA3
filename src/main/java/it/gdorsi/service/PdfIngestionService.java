@@ -51,13 +51,11 @@ public class PdfIngestionService {
         // In deinem PdfIngestionService
         // vermeiden 500] Internal Server Error - {"error":"the input length exceeds the context length"}
         // Modelle wie mxbai-embed-large haben meist ein Limit von 512 oder 1024 Tokens. Ein typisches PDF-Dokument hat aber tausende.
-        final TokenTextSplitter splitter = new TokenTextSplitter(
-                300,  // chunkLength: Von 500 auf 300 runter (Sicherheitsmarge!)
-                50,   // chunkOverlap: Kleinerer Overlap spart Platz
-                5,    // keepAdjustmentThreshold
-                5000, // maxNumChunks: Falls das PDF riesig ist
-                true  // keepDelimiters
-        );
+        final TokenTextSplitter splitter = TokenTextSplitter.builder()
+                .withChunkSize(300)
+                .withMaxNumChunks(5000)
+                .withKeepSeparator(true)
+                .build();
 
         // 3. Transformation & Speicherung
         // apply() liest das PDF, splittet es und gibt eine Liste von Documents zurück

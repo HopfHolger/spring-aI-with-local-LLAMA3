@@ -12,12 +12,10 @@ public class PdfSanitizer {
 
         // Sanitize: Ungültige Unicode-Zeichen entfernen
         return documents.stream()
-                .map(doc -> {
-                    final String cleanContent = sanitizeText(doc.getText());
-                    if (cleanContent != null) {
-                        return new Document(doc.getId(), cleanContent, doc.getMetadata());
-                    }
-                })
+                .map(doc -> new Document(
+                        doc.getId(),
+                        sanitizeText(doc.getText()),
+                        doc.getMetadata()))
                 .toList();
     }
 
