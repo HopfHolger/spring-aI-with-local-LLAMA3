@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: dein_name
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS vector; # Aktiviert pgvector in der DB
+        - createTable:
+            tableName: authors
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: bio
+                  type: TEXT
+              - column:
+                  name: author_embedding
+                  type: vector(1024) # Hier die Dimension deines Modells eintragen!

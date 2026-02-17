@@ -79,6 +79,7 @@ public class ChatController {
         MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         this.chatClient = builder
                 .defaultAdvisors(advisor, chatMemoryAdvisor)
+                .defaultTools("saveAuthor") // ist dann in allen propmpts - kann aber auch explizit hinzufügen
                 .build();
     }
 
