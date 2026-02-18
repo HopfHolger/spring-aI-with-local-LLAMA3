@@ -25,6 +25,7 @@ Ziel eine funktionierende Kette:Java/Spring AI \(\rightarrow \) Ollama (mxbai-em
     ollama pull mxbai-embed-large
     ollama rm llama3
     ollama list oder ls
+    tail -f ~/.ollama/logs/server.log
    
    Falls du ein spezielles Modell für Embeddings (Vektorisierung) nutzt (was oft performanter ist), solltest du auch dieses laden, falls es in deiner application.properties steht.
 2. **Clone the Repository**:
