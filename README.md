@@ -18,7 +18,7 @@ Der Anfang dieses Projketes war ein git-Projekt https://github.com/gdorsi44/spri
 
 Ziel eine funktionierende Kette:Java/Spring AI \(\rightarrow \) Ollama (mxbai-embed-large) \(\rightarrow \) PostgreSQL (pgvector). 
 
-1. **Install and run LLama3 with Ollama**:
+1. **Install and run model (zB llama3)  with Ollama**:
     ```bash
     ollama run llama3 
     ollama pull mistral // ein Modell
@@ -26,6 +26,7 @@ Ziel eine funktionierende Kette:Java/Spring AI \(\rightarrow \) Ollama (mxbai-em
     ollama rm llama3
     ollama list oder ls
     tail -f ~/.ollama/logs/server.log
+    tail -f ~/.ollama/logs/server.log | grep -i "tool_calls"
    
    Falls du ein spezielles Modell für Embeddings (Vektorisierung) nutzt (was oft performanter ist), solltest du auch dieses laden, falls es in deiner application.properties steht.
 2. **Clone the Repository**:
@@ -70,5 +71,25 @@ Das ist ein kritischer Punkt: Wenn die Dimensionen deines Embedding-Modells nich
    Wenn du eine Vektordatenbank aufbaust, musst du ihr oft vorher sagen, wie viele Dimensionen sie speichern soll (z. B. 1536), damit sie weiß, wie viel Platz sie für jeden Eintrag reservieren muss. 
 
 In der Welt der KI und Vektordatenbanken ist die Cosine Distance (Kosinus-Distanz) das Standardmaß, um festzustellen, wie „nah“ sich zwei Texte inhaltlich sind.
+
+6. **RAG **:
+   ```bash
+   RAG steht für Retrieval-Augmented Generation (zu Deutsch etwa: „Durch Abruf erweiterte Erzeugung“).
+   
+   Stell dir vor, das LLM (Llama 3.1) ist ein extrem intelligenter Student, der alles weiß, was in seinen Lehrbüchern stand (sein Training bis zu einem gewissen Datum). RAG ist für diesen Studenten so, als würdest du ihm ein offenes Fachbuch (deine Datenbank/Dokumente) danebenlegen, in dem er jederzeit nachschlagen kann.
+So funktioniert der Prozess bei dir:
+User fragt: „Was schreibt Holger?“
+Retrieval (Abrufen): Spring AI sucht in deiner Postgres (VectorStore) nach Textabschnitten, die semantisch zu „Holger“ passen.
+Augmentation (Erweitern): Die gefundenen Infos (z.B. „Holger schreibt in allem“) werden in den Prompt gepackt:
+Prompt: „Hier ist Kontext aus der DB: 'Holger schreibt in allem'. Beantworte basierend darauf die Frage: Was schreibt Holger?“
+Generation (Erzeugen): Das Modell generiert die Antwort basierend auf diesem frischen Wissen.
+Warum macht man das?
+Aktualität: Du musst das Modell nicht neu trainieren, wenn sich Daten ändern.
+Keine Halluzinationen: Die KI rät nicht, sondern nutzt die Fakten aus deinem VectorStore.
+Privatsphäre: Du kannst der KI internes Wissen geben, das niemals im Internet/Training gelandet ist.
+Der Unterschied zum Tool Calling:
+RAG dient zum Lesen von Wissen (Kontext liefern).
+Tool Calling dient zum Handeln (etwas in die DB schreiben oder eine API aufrufen).
+ 
 
 

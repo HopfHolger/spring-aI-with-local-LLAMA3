@@ -3,6 +3,7 @@ package it.gdorsi.service;
 import java.util.stream.Collectors;
 
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
@@ -73,5 +74,28 @@ public class AutorTool implements AutorOperations {
         } catch (Exception e) {
             return "SYSTEMFEHLER: Speichern aktuell nicht möglich. Bitte später versuchen.";
         }
+    }
+
+    // UPDATE: Die KI erkennt am Namen/Biografie, was sich ändern soll ohne interface
+    @Tool(description = "Aktualisiert die Biografie eines bestehenden Autors")
+    public String updateAutor(String name, String neueBiografie) {
+        // 1. Neuen Vektor berechnen
+        float[] vector = embeddingModel.embed(neueBiografie);
+
+        // direkt an die DB, schneller
+        int rows = repository.updateBiografieByName(name, neueBiografie, vector);
+
+        return rows > 0 ? "Update für " + name + " erfolgreich" : "Autor nicht gefunden";
+    }
+
+    // DELETE: Einfaches Löschen per Name
+    @Override
+    @Transactional
+    public String deleteAutor(String name) {
+        if (repository.existsByName(name)) {
+            repository.deleteByName(name);
+            return "Autor " + name + " wurde gelöscht.";
+        }
+        return "Löschen fehlgeschlagen: Autor " + name + " existiert nicht.";
     }
 }

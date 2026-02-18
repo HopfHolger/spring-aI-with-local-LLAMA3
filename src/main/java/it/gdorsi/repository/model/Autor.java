@@ -39,6 +39,13 @@ public class Autor {
         this.authorEmbedding = authorEmbedding;
     }
 
+    public Autor(Long id, String name, String neueBiografie, float[] newVector) {
+        this.id = id;
+        this.name = name;
+        this.bio = neueBiografie;
+        this.authorEmbedding = newVector;
+    }
+
 
     public Long getId() {
         return id;

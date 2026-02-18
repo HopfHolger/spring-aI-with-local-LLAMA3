@@ -4,6 +4,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -24,29 +25,29 @@ import reactor.core.publisher.Flux;
  * Schritt C: Du fügst diesen String manuell in deinen Prompt ein.
  * Vorteil: Du hast volle Kontrolle über jedes Wort im Prompt.
  * <p>
- *         // 1. Suche die relevantesten Schnipsel aus deinem Wissen (Postgres)
- *         List<Document> similarDocs = vectorStore.similaritySearch(
- *                 SearchRequest.query(message).withTopK(3));
+ * // 1. Suche die relevantesten Schnipsel aus deinem Wissen (Postgres)
+ * List<Document> similarDocs = vectorStore.similaritySearch(
+ * SearchRequest.query(message).withTopK(3));
  * <p>
- *         // 2. Erstelle den Kontext-String aus den Fundstücken
- *         String context = similarDocs.stream()
- *                 .map(Document::getContent)
- *                 .collect(Collectors.joining("\n"));
+ * // 2. Erstelle den Kontext-String aus den Fundstücken
+ * String context = similarDocs.stream()
+ * .map(Document::getContent)
+ * .collect(Collectors.joining("\n"));
  * <p>
- *         // 3. Baue den Prompt: Fakten + Frage
- *         String prompt = """
- *             Nutze den folgenden Kontext, um die Frage zu beantworten.
- *             Wenn du die Antwort nicht im Kontext findest, sage: "Das weiß ich leider nicht."
+ * // 3. Baue den Prompt: Fakten + Frage
+ * String prompt = """
+ * Nutze den folgenden Kontext, um die Frage zu beantworten.
+ * Wenn du die Antwort nicht im Kontext findest, sage: "Das weiß ich leider nicht."
  * <p>
- *             KONTEXT:
- *             %s
+ * KONTEXT:
+ * %s
  * <p>
- *             FRAGE:
- *             %s
- *             """.formatted(context, message);
+ * FRAGE:
+ * %s
+ * """.formatted(context, message);
  * <p>
  * 2. Der "Automatische" Weg (Mit dem QuestionAnswerAdvisor)
- *  ist der neue Weg, den die aktuelle Spring AI Version (M5) ermöglicht.
+ * ist der neue Weg, den die aktuelle Spring AI Version (M5) ermöglicht.
  * Du sagst dem ChatClient einfach: "Hier ist mein vectorStore, kümmere dich um den Rest."
  * Wenn du jetzt chatClient.prompt().user("Frage").call() aufrufst, macht der Advisor im Hintergrund genau die Schritte A, B und C für dich,
  * ohne dass du den Code dafür schreiben musst.
@@ -65,10 +66,11 @@ public class ChatController {
      * Falls du mal einen Call ohne Dokumenten-Kontext machen möchtest, kannst du einfach:
      * java
      * chatClient.prompt()
-     *     .advisors(a -> a.clear()) // Entfernt die Default-Advisoren für diesen einen Call
-     *     .user("Hallo, wer bist du?")
-     *     .call();
-     * @param builder chatClient Builder
+     * .advisors(a -> a.clear()) // Entfernt die Default-Advisoren für diesen einen Call
+     * .user("Hallo, wer bist du?")
+     * .call();
+     *
+     * @param builder     chatClient Builder
      * @param vectorStore vectorStore Postgres
      */
     public ChatController(ChatClient.Builder builder, VectorStore vectorStore, ChatMemory chatMemory, AutorOperations autorOperations) {
@@ -76,6 +78,10 @@ public class ChatController {
         // was ihn Thread-sicher für den ChatClient macht.
         // Wenn der RAG-Advisor (QuestionAnswerAdvisor) aktiv ist, schreibt er den Prompt massiv um, um die Dokumente aus der Vector-Datenbank einzufügen.
         QuestionAnswerAdvisor advisor = QuestionAnswerAdvisor.builder(vectorStore)
+                .searchRequest(SearchRequest.builder()
+                        .topK(10) // 10 ähnlichsten Textpassagen zurück default 4
+                        .similarityThreshold(0.7) // Ähnlichkeit von z.B. 0.5 haben, werden diese aussortiert
+                        .build())
                 .build();
         MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         this.chatClient = builder
@@ -89,15 +95,15 @@ public class ChatController {
      * Bei zustandslosen APIs (z. B. REST für Mobile Apps)
      * sendet der Client oft selbst eine ID mit (z. B. eine UUID),
      * um einen Chat-Thread zu identifizieren. So bleibst du unabhängig von Server-Sessions.
-     * @PostMapping("/ask")
-     * public String ask(@RequestBody ChatRequest request) {
-     *     // Der Client schickt z.B. eine chatId: "user-123-thread-456"
-     *     String conversationId = request.getChatId();
-     *     ...
-     * }
+     *
      * @param question usewr prompt/question
-     * @param session HttpSession
+     * @param session  HttpSession
      * @return Antwort vom ChatClient
+     * @PostMapping("/ask") public String ask(@RequestBody ChatRequest request) {
+     * // Der Client schickt z.B. eine chatId: "user-123-thread-456"
+     * String conversationId = request.getChatId();
+     * ...
+     * }
      */
     @PostMapping("/admin/chat")
     @ResponseBody
