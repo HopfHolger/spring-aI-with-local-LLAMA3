@@ -42,7 +42,7 @@ Ziel eine funktionierende Kette:Java/Spring AI \(\rightarrow \) Ollama (mxbai-em
    ```bash
    docker-compose up -d
 
-Pro-Tipp: Wenn du Ressourcen sparen willst, lerne das Modell mxbai-embed-large kennen (mit ollama pull mxbai-embed-large). Es ist speziell für Embeddings optimiert und nutzt oft nur 1024 Dimensionen, was deine Datenbank-Indizes deutlich schneller macht als das riesige Mistral-Modell.
+Pro-Tipp: Wenn du Ressourcen sparen willst, lerne das Modell mxbai-embed-large kennen (mit ollama pull mxbai-embed-large). Es ist speziell für Embeddings optimiert und nutzt oft nur 1024 Dimensionen, was deine Datenbank-Indizes deutlich schneller macht als das riesige Mistral-Modell. Wir nehmen llama3.1, wei les Tool-Calling kann.
 Das ist ein kritischer Punkt: Wenn die Dimensionen deines Embedding-Modells nicht exakt mit der Spaltendefinition in deiner PostgreSQL übereinstimmen, wird die Datenbank jeden Schreib- oder Suchversuch mit einem Fehler abbrechen.
 
 

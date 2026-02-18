@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import it.gdorsi.service.AutorOperations;
 import jakarta.servlet.http.HttpSession;
 import reactor.core.publisher.Flux;
 
@@ -54,7 +55,6 @@ import reactor.core.publisher.Flux;
 @Controller
 public class ChatController {
 
-    // Hier kannst du dein eigenes Chat-Modell/Client einbinden (z.B. Mistral)
     private final ChatClient chatClient;
 
     /**
@@ -71,15 +71,16 @@ public class ChatController {
      * @param builder chatClient Builder
      * @param vectorStore vectorStore Postgres
      */
-    public ChatController(ChatClient.Builder builder, VectorStore vectorStore, ChatMemory chatMemory) {
+    public ChatController(ChatClient.Builder builder, VectorStore vectorStore, ChatMemory chatMemory, AutorOperations autorOperations) {
         // Immutability: Der Advisor ist nach dem .build() unveränderlich,
         // was ihn Thread-sicher für den ChatClient macht.
+        // Wenn der RAG-Advisor (QuestionAnswerAdvisor) aktiv ist, schreibt er den Prompt massiv um, um die Dokumente aus der Vector-Datenbank einzufügen.
         QuestionAnswerAdvisor advisor = QuestionAnswerAdvisor.builder(vectorStore)
                 .build();
         MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         this.chatClient = builder
                 .defaultAdvisors(advisor, chatMemoryAdvisor)
-                .defaultTools("saveAuthor") // ist dann in allen propmpts - kann aber auch explizit hinzufügen
+                .defaultTools(autorOperations)
                 .build();
     }
 
@@ -108,6 +109,7 @@ public class ChatController {
                     // Set advisor parameters at runtime
                     .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, session.getId()))
                     .user(question)
+                    //.tools("saveAutorTool") // Expliziter Name der Bean/Methode
                     .call()
                     .content();
         } catch (Exception e) {
