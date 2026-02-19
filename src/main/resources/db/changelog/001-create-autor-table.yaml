@@ -19,7 +19,7 @@ databaseChangeLog:
                   name: name
                   type: VARCHAR(255)
               - column:
-                  name: bio
+                  name: biografie
                   type: TEXT
               - column:
                   name: author_embedding

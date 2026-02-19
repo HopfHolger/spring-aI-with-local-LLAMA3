@@ -17,7 +17,7 @@ public interface AuthorRepository extends JpaRepository<Autor, Long> {
 
     @Modifying
     @Transactional
-    @Query(value = "UPDATE authors SET bio = :biografie, vector = cast(:vector as vector) WHERE name = :name", nativeQuery = true)
+    @Query(value = "UPDATE authors SET biografie = :biografie, author_embedding = cast(:vector as vector) WHERE name = :name", nativeQuery = true)
     int updateBiografieByName(
             @Param("name") String name,
             @Param("biografie") String biografie,

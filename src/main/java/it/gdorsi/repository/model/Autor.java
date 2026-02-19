@@ -21,7 +21,7 @@ public class Autor {
     private Long id;
 
     private String name;
-    private String bio;
+    private String biografie;
 
     // Das Feld für die semantische Repräsentation der Bio oder Expertise
     @Column(columnDefinition = "vector(1024)") // Dimension abhängig vom Modell - nicht ändern!
@@ -33,16 +33,16 @@ public class Autor {
     }
 
     // 2. Dein benutzerdefinierter Konstruktor
-    public Autor(String name, String bio, float[] authorEmbedding) {
+    public Autor(String name, String biografie, float[] authorEmbedding) {
         this.name = name;
-        this.bio = bio;
+        this.biografie = biografie;
         this.authorEmbedding = authorEmbedding;
     }
 
     public Autor(Long id, String name, String neueBiografie, float[] newVector) {
         this.id = id;
         this.name = name;
-        this.bio = neueBiografie;
+        this.biografie = neueBiografie;
         this.authorEmbedding = newVector;
     }
 
@@ -63,8 +63,8 @@ public class Autor {
         this.name = name;
     }
 
-    public String getBio() {
-        return bio;
+    public String getBiografie() {
+        return biografie;
     }
 
     public float[] getAuthorEmbedding() {

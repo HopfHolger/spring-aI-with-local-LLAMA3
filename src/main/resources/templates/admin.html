@@ -37,7 +37,40 @@
         </form>
     </div>
 
-    <div id="edit-container" class="space-y-8">></div>
+    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+        <h2 class="text-xl font-bold mb-4 text-blue-600 text-sm uppercase tracking-wider">Autoren-Biografien</h2>
+
+        <!-- Platzhalter für das Editier-Formular -->
+        <div id="edit-container" class="mb-6"></div>
+
+        <div id="author-list-wrapper" hx-get="/admin/autoren/list" hx-trigger="load, updateAuthorList from:body">
+            <div id="author-list" th:fragment="authorTable">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="p-3">Name</th>
+                        <th class="p-3">Bio-Vorschau</th>
+                        <th class="p-3 text-right">Aktion</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="autor : ${autoren}" class="border-b hover:bg-blue-50 transition">
+                        <td class="p-3 font-bold" th:text="${autor.name}"></td>
+                        <td class="p-3 text-sm text-gray-500" th:text="${#strings.abbreviate(autor.biografie, 60)}"></td>
+                        <td class="p-3 text-right">
+                            <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+                                    th:attr="hx-get='/admin/edit/' + ${autor.name}"
+                                    hx-target="#edit-container">
+                                Bio Editieren
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Bereich 2: Dokumentenliste -->
     <div class="bg-white p-6 rounded-xl shadow-md">
@@ -64,12 +97,6 @@
                         th:text="${doc.lastUpdated != null ? #strings.substring(doc.lastUpdated,0,10) : 'Kein Datum'}">
                     </td>
                     <<td class="p-3 text-right flex gap-2 justify-end">
-                    <!-- EDIT BUTTON -->
-                    <button class="text-blue-500 hover:text-blue-700 font-medium"
-                            th:attr="hx-get='/admin/edit/' + ${doc.fileName}"
-                            hx-target="#edit-container">
-                        Editieren
-                    </button>
                         <button class="text-red-500 hover:text-red-700 font-medium"
                                 th:attr="hx-delete='/admin/documents/' + ${doc.fileName}"
                                 hx-confirm="Möchtest du dieses Dokument wirklich löschen?"
@@ -117,13 +144,12 @@
     </div>
 
 </div>
-<div th:fragment="editFragment" id="edit-section" class="bg-white p-6 rounded-xl shadow-lg border-2 border-blue-500 mb-8">
+<div th:fragment="editFragment" th:if="${autor != null}" id="edit-section" class="bg-white p-6 rounded-xl shadow-lg border-2 border-blue-500 mb-8">
     <h2 class="text-xl font-bold mb-4" th:text="'Bearbeite: ' + ${autor.name}"></h2>
     <!-- WICHTIG: hx-target="#doc-list-wrapper" damit nach dem Speichern die Liste aktualisiert wird -->
     <form th:attr="hx-put=@{/admin/autor/{name}(name=${autor.name})}"
-          hx-target="#doc-list-wrapper"
+          hx-target="#author-list-wrapper"
           hx-on::after-request="if(event.detail.successful) document.getElementById('edit-section').remove()">
-
         <div class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Biografie</label>

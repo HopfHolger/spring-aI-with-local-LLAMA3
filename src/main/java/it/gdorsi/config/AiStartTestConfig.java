@@ -40,6 +40,7 @@ public class AiStartTestConfig {
                 if (!results.isEmpty()) {
                     System.out.println(">>> Suche erfolgreich! Gefunden: " + results.getFirst().getText());
                 }
+                vectorStore.delete(results.stream().map(Document::getId).toList());
 
                 System.out.println(">>> ENDE: KI-Infrastruktur ist BEREIT!");
 
@@ -61,7 +62,7 @@ public class AiStartTestConfig {
             var results = vectorStore.similaritySearch("Java");
             results.forEach(d -> System.out.println("Gefunden ID in DB: " + d.getId()));
             System.out.println("Gefundene Treffer in der DB: " + results.size());
-
+            vectorStore.delete(results.stream().map(Document::getId).toList());
         };
     }
 
