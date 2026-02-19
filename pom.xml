@@ -132,6 +132,14 @@
             <version>3.17.0</version> <!-- Aktuellste Version -->
         </dependency>
 
+        <!-- Source: https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.42</version>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- Auch Commons IO ist oft ein Wackelkandidat -->
         <dependency>
             <groupId>commons-io</groupId>

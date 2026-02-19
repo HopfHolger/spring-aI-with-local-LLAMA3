@@ -1,0 +1,59 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20240520-create-vertrag-with-vector
+      author: ki-admin
+      changes:
+        # 1. Extension aktivieren (bevor die Tabelle erstellt wird!)
+        - sql:
+            dbms: postgresql
+            sql: CREATE EXTENSION IF NOT EXISTS vector;
+
+        # 2. Tabelle erstellen
+        - createTable:
+            tableName: vertrag
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: vertrags_nummer
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: kunde_name
+                  type: VARCHAR(255)
+              - column:
+                  name: start_datum
+                  type: DATE
+              - column:
+                  name: end_datum
+                  type: DATE
+              - column:
+                  name: betrag
+                  type: DECIMAL(19,2)
+              - column:
+                  name: vertrags_typ
+                  type: VARCHAR(100)
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+              - column:
+                  name: bemerkung
+                  type: TEXT
+              - column:
+                  name: vertrag_embedding
+                  type: "vector(1024)"
+
+        # 3. Bestehende Daten auf Enum-Konstanten korrigieren
+        - sql:
+            dbms: postgresql
+            sql: |
+              UPDATE vertrag SET status = 'ENTWURF' WHERE status ILIKE 'Entwurf';
+              UPDATE vertrag SET status = 'AKTIV' WHERE status ILIKE 'Aktiv';
+              UPDATE vertrag SET status = 'GEKUENDIGT' WHERE status ILIKE 'Gekündigt' OR status ILIKE 'GEKUENDIGT';

@@ -14,7 +14,16 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 p-8">
+<body class="flex">
+<!-- NAVIGATION SIDEBAR -->
+<aside class="w-64 bg-slate-800 text-white flex-shrink-0">
+    <div class="p-6 text-xl font-bold border-b border-slate-700">Admin Panel</div>
+    <nav class="p-4 space-y-2">
+        <a th:href="@{/admin}" class="block p-3 rounded hover:bg-slate-700 transition">🧠 KI Wissen</a>
+        <a th:href="@{/admin/vertraege}" class="block p-3 rounded bg-blue-600 font-bold shadow-lg">📄 Verträge</a>
+        <a href="#" class="block p-3 rounded hover:bg-slate-700 opacity-50 cursor-not-allowed">⚙️ Einstellungen</a>
+    </nav>
+</aside>
 <div class="max-w-4xl mx-auto space-y-8">
 
     <!-- Bereich 1: Upload -->
@@ -98,37 +107,38 @@
              hx-get="/admin/list"
              hx-trigger="load, updateList from:body">
             <div id="doc-list" th:fragment="docTable">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 border-b">
-                <tr>
-                    <th class="p-3">Dateiname</th>
-                    <th class="p-3">Chunks</th>
-                    <th class="p-3">Zuletzt aktualisiert</th>
-                    <th class="p-3">Aktion</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="doc : ${docs}" class="border-b hover:bg-gray-50">
-                    <td class="p-3 font-medium" th:text="${doc.fileName}"></td>
-                    <td class="p-3" th:text="${doc.chunkCount}"></td>
-                    <td class="p-3 text-sm text-gray-500"
-                        th:text="${doc.lastUpdated != null ? #temporals.format(doc.lastUpdated, 'dd.MM.yyyy') : 'Kein Datum'}">
-                    </td>
-                    <<td class="p-3 text-right flex gap-2 justify-end">
-                        <button class="text-red-500 hover:text-red-700 font-medium"
-                                th:attr="hx-delete='/admin/documents/' + ${doc.fileName}"
-                                hx-confirm="Möchtest du dieses Dokument wirklich löschen?"
-                                hx-target="closest tr"
-                                hx-swap="outerHTML swap:1s">
-                            Löschen
-                        </button>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(docs)}">
-                    <td colspan="4" class="p-8 text-center text-gray-400 italic">Noch kein Wissen geladen...</td>
-                </tr>
-                </tbody>
-            </table>
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="p-3">Dateiname</th>
+                        <th class="p-3">Chunks</th>
+                        <th class="p-3">Zuletzt aktualisiert</th>
+                        <th class="p-3">Aktion</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="doc : ${docs}" class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-medium" th:text="${doc.fileName}"></td>
+                        <td class="p-3" th:text="${doc.chunkCount}"></td>
+                        <td class="p-3 text-sm text-gray-500"
+                            th:text="${doc.lastUpdated != null ? #temporals.format(doc.lastUpdated, 'dd.MM.yyyy') : 'Kein Datum'}">
+                        </td>
+                        <
+                        <td class="p-3 text-right flex gap-2 justify-end">
+                            <button class="text-red-500 hover:text-red-700 font-medium"
+                                    th:attr="hx-delete='/admin/documents/' + ${doc.fileName}"
+                                    hx-confirm="Möchtest du dieses Dokument wirklich löschen?"
+                                    hx-target="closest tr"
+                                    hx-swap="outerHTML swap:1s">
+                                Löschen
+                            </button>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(docs)}">
+                        <td colspan="4" class="p-8 text-center text-gray-400 italic">Noch kein Wissen geladen...</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -198,7 +208,8 @@
             </div>
             <div class="flex gap-2">
                 <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded">Speichern</button>
-                <button type="button" onclick="document.getElementById('edit-section').remove()" class="bg-gray-400 text-white px-6 py-2 rounded">Abbrechen</button>
+                <button type="button" onclick="document.getElementById('edit-section').remove()" class="bg-gray-400 text-white px-6 py-2 rounded">Abbrechen
+                </button>
             </div>
         </div>
     </form>

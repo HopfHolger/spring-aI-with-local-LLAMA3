@@ -1,8 +1,11 @@
 package it.gdorsi.config;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.web.client.RestClient;
 
+import it.gdorsi.service.VertragTool;
 import jakarta.persistence.Timeout;
 
 @Configuration
@@ -43,6 +47,15 @@ public class AiConfig {
 
         return RestClient.builder()
                 .requestFactory(factory);
+    }
+
+    @Bean
+    public List<ToolCallback> contractToolCallbacks(VertragTool vertragTools) {
+        // Erzeugt sauber die Callbacks aus deinem Interface/Component
+        return List.of(MethodToolCallbackProvider.builder()
+                .toolObjects(vertragTools)
+                .build()
+                .getToolCallbacks());
     }
 
 }

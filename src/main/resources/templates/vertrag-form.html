@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:hx-on="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Vertragsverwaltung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org"></script>
+</head>
+
+<body class="bg-gray-100 flex min-h-screen">
+
+<aside class="w-64 bg-slate-800 text-white flex-shrink-0">
+    <div class="p-6 text-xl font-bold border-b border-slate-700">Admin Panel</div>
+    <nav class="p-4 space-y-2">
+        <a th:href="@{/admin}" class="block p-3 rounded hover:bg-slate-700 transition">🧠 KI Wissen</a>
+        <a th:href="@{/admin/vertraege}" class="block p-3 rounded bg-blue-600 font-bold shadow-lg">📄 Verträge</a>
+    </nav>
+</aside>
+
+<main class="flex-1 p-10 space-y-8">
+    <!-- BEREICH 1: FORMULAR (Neu & Update) -->
+    <div id="form-container" class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+        <div th:fragment="vertragForm">
+            <h1 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-4"
+                th:text="${vertrag.id == null ? 'Neuen Vertrag anlegen' : 'Vertrag bearbeiten: ' + vertrag.vertragsNummer}">
+            </h1>
+
+            <!-- WICHTIG: hx-target="body" lädt die Seite neu und aktualisiert die Liste -->
+            <form hx-post="/admin/vertraege/save"
+                  hx-target="body"
+                  class="grid grid-cols-2 gap-6">
+
+                <input type="hidden" name="id" th:value="${vertrag.id}">
+
+                <!-- Restliche Felder bleiben gleich, aber achte auf die Namen (Lombok @Data) -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Vertragsnummer</label>
+                    <input type="text" name="vertragsNummer" th:value="${vertrag.vertragsNummer}" required
+                           class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Kundenname</label>
+                    <input type="text" name="kundeName" th:value="${vertrag.kundeName}" required
+                           class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Beginn</label>
+                    <input type="date" name="startDatum" th:value="${vertrag.startDatum}"
+                           class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Ende</label>
+                    <input type="date" name="endDatum" th:value="${vertrag.endDatum}"
+                           class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Betrag (€)</label>
+                    <input type="number" step="0.01" name="betrag" th:value="${vertrag.betrag}"
+                           class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Typ</label>
+                    <select name="vertragsTyp" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                        <option th:selected="${vertrag.vertragsTyp == 'Wartung'}">Wartung</option>
+                        <option th:selected="${vertrag.vertragsTyp == 'Service'}">Service</option>
+                        <option th:selected="${vertrag.vertragsTyp == 'Mietkauf'}">Mietkauf</option>
+                        <option th:selected="${vertrag.vertragsTyp == 'Lizenz'}">Lizenz</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Status</label>
+                    <select name="status" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                        <!-- Iteriert über alle Enums und setzt 'selected' automatisch -->
+                        <option th:each="statusValue : ${T(it.gdorsi.repository.model.VertragStatus).values()}"
+                                th:value="${statusValue}"
+                                th:text="${statusValue.label}"
+                                th:selected="${statusValue == vertrag.status}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Bemerkungen</label>
+                    <textarea name="bemerkung" rows="3" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500"
+                              th:text="${vertrag.bemerkung ?: ''}"></textarea>
+                </div>
+
+                <div class="col-span-2 flex gap-4 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">
+                        Speichern
+                    </button>
+                    <a th:if="${vertrag.id != null}" th:href="@{/admin/vertraege}"
+                       class="flex-1 bg-gray-400 text-white py-3 rounded-lg font-bold text-center hover:bg-gray-500 transition">
+                        Abbrechen
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KI-Chat Bereich: Jetzt standardmäßig deaktiviert -->
+    <div id="ki-chat-area" class="max-w-5xl mx-auto bg-gray-50 p-6 rounded-2xl shadow-md border-2 border-gray-200 mb-8 transition-all duration-300 opacity-50">
+        <h2 class="text-lg font-bold text-gray-400 mb-4 flex items-center gap-2" id="ki-title">
+            <span>🔒</span> KI-Vertrags-Assistent (Wähle einen Vertrag in der Liste)
+        </h2>
+
+        <div id="chat-response" class="min-h-[40px] mb-4 text-sm italic text-purple-700">
+            <!-- Fragment bleibt gleich -->
+        </div>
+
+        <form hx-post="/admin/vertraege/chat" hx-target="#chat-response" hx-indicator="#chat-loading"
+              hx-on::after-request="disableAiChat()">
+            <div class="flex gap-2">
+                <input type="text" name="question" id="ki-input" disabled
+                       class="flex-1 border-2 border-gray-200 p-2 rounded-lg outline-none bg-gray-100 cursor-not-allowed"
+                       placeholder="Bitte erst einen Vertrag unten auswählen...">
+
+                <button type="submit" id="ki-submit" disabled
+                        class="bg-gray-400 text-white px-6 py-2 rounded-lg font-bold cursor-not-allowed transition">
+                    Analysieren & Speichern
+                </button>
+                <button type="button" id="ki-cancel" disabled
+                        onclick="resetAiChat()"
+                        class="bg-white text-gray-400 border border-gray-200 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-all opacity-0 cursor-not-allowed">
+                    Abbrechen
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- BEREICH 2: LISTE -->
+    <
+    <div id="contract-list-wrapper"
+         hx-get="/admin/vertraege"
+         hx-trigger="load, updateContractList from:body"
+         hx-select="#contract-table-content"> <!-- Holt nur den Tabellen-Inhalt ab -->
+
+        <div id="contract-table-content" class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                <tr class="bg-gray-50 border-b">
+                    <th class="p-3 text-sm font-semibold">Nr.</th>
+                    <th class="p-3 text-sm font-semibold">Kunde</th>
+                    <th class="p-3 text-sm font-semibold">Typ</th>
+                    <th class="p-3 text-sm font-semibold">Betrag</th>
+                    <th class="p-3 text-sm font-semibold">Status</th>
+                    <th class="p-3 text-sm font-semibold text-right">Aktion</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="v : ${vertraege}" class="border-b hover:bg-gray-50 transition">
+                    <!-- FESTE DATEN (Grau) -->
+                    <td class="p-3 text-sm font-mono text-gray-400" th:text="${v.vertragsNummer}"></td>
+                    <td class="p-3 text-sm text-gray-500" th:text="${v.kundeName}"></td>
+                    <td class="p-3 text-sm text-gray-400" th:text="${v.vertragsTyp}"></td>
+
+                    <!-- ÄNDERBAR: BETRAG (Blau markiert) -->
+                    <td class="p-3 text-sm font-bold text-blue-600 bg-blue-50/50">
+                        <span th:text="${v.betrag != null ? #numbers.formatDecimal(v.betrag, 1, 2, 'COMMA') + ' €' : '0,00 €'}"></span>
+                    </td>
+
+                    <!-- ÄNDERBAR: STATUS (Farbiges Badge) -->
+                    <!-- ÄNDERBAR: STATUS (Ebenfalls Blau markiert wie der Betrag) -->
+                    <td class="p-3 text-sm font-bold text-blue-700 bg-blue-50">
+                        <div class="flex items-center gap-2">
+                            <!-- Das Badge bleibt farbig zur besseren Unterscheidung, aber die Zelle ist blau -->
+                            <span th:text="${v.status.label}"
+                                  class="px-2 py-1 rounded text-[10px] uppercase border"
+                                  th:classappend="${v.status.name() == 'AKTIV' ? 'bg-blue-100 border-blue-300 text-blue-800' :
+                                   v.status.name() == 'GEKUENDIGT' ? 'bg-red-100 border-red-200 text-red-700' :
+                                   'bg-gray-100 border-gray-200 text-gray-600'}">
+            </span>
+                            <span class="text-[10px] opacity-40">✏️</span>
+                        </div>
+                    </td>
+
+                    <!-- AKTIONEN -->
+                    <td class="p-3 text-right flex gap-2 justify-end">
+
+                        <!-- DER KI-BUTTON (Wieder da!) -->
+                        <button class="bg-purple-100 text-purple-700 px-3 py-1 rounded-md text-[10px] font-bold hover:bg-purple-200 transition border border-purple-200"
+                                th:attr="data-nr=${v.vertragsNummer}"
+                                onclick="enableAiChat(this.getAttribute('data-nr'))">
+                            ✨ KI-EDIT
+                        </button>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(vertraege)}">
+                    <td colspan="6" class="p-10 text-center text-gray-400 italic">Keine Verträge vorhanden.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    function enableAiChat(vertragNr) {
+        const area = document.getElementById('ki-chat-area');
+        const input = document.getElementById('ki-input');
+        const submitBtn = document.getElementById('ki-submit');
+        const cancelBtn = document.getElementById('ki-cancel');
+        const title = document.getElementById('ki-title');
+
+        // 1. Bereich aktivieren (Lila & Sichtbar)
+        area.classList.remove('opacity-50', 'bg-gray-50', 'border-gray-200');
+        area.classList.add('opacity-100', 'bg-purple-50', 'border-purple-300');
+
+        title.innerHTML = '<span>✨</span> KI-Edit für Vertrag: ' + vertragNr;
+        title.classList.remove('text-gray-400');
+        title.classList.add('text-purple-700');
+
+        // 2. Input & Submit entsperren
+        input.disabled = false;
+        input.classList.remove('bg-gray-100', 'cursor-not-allowed', 'border-gray-200');
+        input.classList.add('bg-white', 'border-purple-300');
+        input.value = 'Ändere für Vertrag ' + vertragNr + ': ';
+
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        submitBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+
+        // 3. Abbrechen Button einblenden
+        cancelBtn.disabled = false;
+        cancelBtn.classList.remove('opacity-0', 'cursor-not-allowed');
+        cancelBtn.classList.add('opacity-100');
+
+        // 4. Fokus & Scroll
+        input.focus();
+        area.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function resetAiChat() {
+        const area = document.getElementById('ki-chat-area');
+        const input = document.getElementById('ki-input');
+        const submitBtn = document.getElementById('ki-submit');
+        const cancelBtn = document.getElementById('ki-cancel');
+        const title = document.getElementById('ki-title');
+
+        // 1. Bereich deaktivieren (Grau & Transparent)
+        area.classList.add('opacity-50', 'bg-gray-50', 'border-gray-200');
+        area.classList.remove('opacity-100', 'bg-purple-50', 'border-purple-300');
+
+        title.innerHTML = '<span>🔒</span> KI-Vertrags-Assistent (Bitte Vertrag in der Liste wählen)';
+        title.classList.add('text-gray-400');
+        title.classList.remove('text-purple-700');
+
+        // 2. Input & Submit sperren
+        input.disabled = true;
+        input.value = '';
+        input.classList.add('bg-gray-100', 'cursor-not-allowed', 'border-gray-200');
+        input.classList.remove('bg-white', 'border-purple-300');
+
+        submitBtn.disabled = true;
+        submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+        submitBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+
+        // 3. Abbrechen wieder verstecken
+        cancelBtn.disabled = true;
+        cancelBtn.classList.add('opacity-0', 'cursor-not-allowed');
+        cancelBtn.classList.remove('opacity-100');
+    }
+</script>
+
+
+</body>
+</html>
