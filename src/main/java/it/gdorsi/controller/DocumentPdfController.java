@@ -13,11 +13,11 @@ import it.gdorsi.dao.DocumentOverview;
 import it.gdorsi.service.DocumentManagementService;
 
 @Controller
-public class DocumentController {
+public class DocumentPdfController {
 
     private final DocumentManagementService documentService;
 
-    public DocumentController(DocumentManagementService documentService) {
+    public DocumentPdfController(DocumentManagementService documentService) {
         this.documentService = documentService;
     }
 

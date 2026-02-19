@@ -1,9 +1,5 @@
 package it.gdorsi.repository;
 
-import java.nio.channels.FileChannel;
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -27,4 +23,6 @@ public interface AuthorRepository extends JpaRepository<Autor, Long> {
             @Param("biografie") String biografie,
             @Param("vector") float[] vector
     );
+
+    Autor findByName(String name);
 }
