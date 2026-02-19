@@ -6,16 +6,13 @@ import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvi
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import it.gdorsi.service.AutorOperations;
 import jakarta.servlet.http.HttpSession;
-import reactor.core.publisher.Flux;
 
 /**
  * Es gibt zwei Wege, wie du dein PDF-Wissen (Docs) an die KI übergibst:
@@ -58,6 +55,8 @@ public class ChatController {
 
     private final ChatClient chatClient;
 
+    private final AutorOperations autorOperations;
+
     /**
      * Der ChatClient wird im Konstruktor (oder einer @Bean-Methode) über den
      * builder mit dem defaultAdvisor initialisierst, es wird jeder Aufruf
@@ -74,19 +73,20 @@ public class ChatController {
      * @param vectorStore vectorStore Postgres
      */
     public ChatController(ChatClient.Builder builder, VectorStore vectorStore, ChatMemory chatMemory, AutorOperations autorOperations) {
+        this.autorOperations = autorOperations;
         // Immutability: Der Advisor ist nach dem .build() unveränderlich,
         // was ihn Thread-sicher für den ChatClient macht.
         // Wenn der RAG-Advisor (QuestionAnswerAdvisor) aktiv ist, schreibt er den Prompt massiv um, um die Dokumente aus der Vector-Datenbank einzufügen.
         QuestionAnswerAdvisor advisor = QuestionAnswerAdvisor.builder(vectorStore)
                 .searchRequest(SearchRequest.builder()
-                        .topK(10) // 10 ähnlichsten Textpassagen zurück default 4
-                        .similarityThreshold(0.7) // Ähnlichkeit von z.B. 0.5 haben, werden diese aussortiert
+                        .topK(2) // 2 ähnlichsten Textpassagen zurück default 4
+                        .similarityThreshold(0.4) // Treffer zulassen, aber keinen Müll
                         .build())
                 .build();
         MessageChatMemoryAdvisor chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         this.chatClient = builder
                 .defaultAdvisors(advisor, chatMemoryAdvisor)
-                .defaultTools(autorOperations)
+                //.defaultTools(autorOperations)
                 .build();
     }
 
@@ -111,14 +111,14 @@ public class ChatController {
                        HttpSession session,
                        Model model) {
 
-        // Wir packen die Instruktion direkt in den User-Teil
-        String enrichedQuestion = question + "\n\nIMPORTANT: Answer exclusively in " + lang + ".";
-
+        // Wir setzen die Sprache als absolut höchste Priorität
+        // Wir nutzen "Respond only in [Language]" als finales Kommando
+        String instruction = String.format(" [MANDATORY: Use ONLY the language '%s' for your response, even if the context is German.]", lang);
         try {
             String answer = chatClient.prompt()
                     .system("Du bist ein Assistent. Nutze die Fakten aus der Datenbank.")
                     .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, session.getId()))
-                    .user(enrichedQuestion)
+                    .user(question + instruction)
                     .call()
                     .content();
 
@@ -130,14 +130,39 @@ public class ChatController {
         }
     }
 
+    @PostMapping("/admin/autor/chat")
+    public String chatAutor(@RequestParam("question") String question,
+                            HttpSession session,
+                            Model model) {
 
+        try {
+            String answer = chatClient.prompt()
+                    // Im /admin/autor/chat Endpunkt:
+                    .system("Speichert einen neuen Autor in der Datenbank")
+                    .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, session.getId()))
+                    .tools(autorOperations)
+                    .user(question)
+                    .call()
+                    .content();
 
-    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamChat(@RequestParam String question) {
-        return chatClient.prompt()
-                .user(question)
-                .stream()
-                .content(); // Liefert einen Flux<String>, der Wort für Wort im Frontend ankommt
+            model.addAttribute("response", "✅ KI-Aktion ausgeführt: " + answer);
+            return "admin :: chatResponse";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", "Fehler: " + e.getMessage());
+            return "admin :: errorFragment";
+        }
+    }
+
+    @PostMapping("/admin/chat/clear")
+    public String clearChat(HttpSession session, Model model) {
+        // Option A: Komplette Session killen (radikal, aber sicher)
+        session.invalidate();
+
+        // Option B: Nur die Nachrichten im ChatMemory löschen (falls du eine Map nutzt)
+        // chatMemory.clear(session.getId());
+
+        model.addAttribute("response", "Gedächtnis gelöscht. Worüber wollen wir sprechen?");
+        return "admin :: chatResponse";
     }
 
 }

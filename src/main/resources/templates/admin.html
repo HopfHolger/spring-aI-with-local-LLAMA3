@@ -40,6 +40,24 @@
     <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
         <h2 class="text-xl font-bold mb-4 text-blue-600 text-sm uppercase tracking-wider">Autoren-Biografien</h2>
 
+        <!-- NEU: Der dedizierte KI-Speicher-Chat direkt bei den Autoren -->
+        <div class="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-100">
+            <label class="block text-xs font-bold text-purple-700 uppercase mb-2">KI-Autor-Erfassung</label>
+            <form hx-post="/admin/autor/chat"
+                  hx-target="#chat-response"
+                  hx-indicator="#chat-loading"
+                  hx-on::after-request="this.reset(); htmx.trigger('body', 'updateAuthorList')">
+                <div class="flex gap-2">
+                    <input type="text" name="question" required
+                           class="flex-1 border-2 border-purple-200 p-2 rounded-lg focus:border-purple-500 outline-none transition"
+                           placeholder="Z.B.: Speichere Holger, er ist ein Experte für Chemie...">
+                    <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 font-bold transition">
+                        Speichern ✨
+                    </button>
+                </div>
+            </form>
+        </div>
+
         <!-- Platzhalter für das Editier-Formular -->
         <div id="edit-container" class="mb-6"></div>
 
@@ -145,6 +163,15 @@
                        placeholder="Z.B.: Wie skaliere ich die Datenbank?">
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
                     Prompt
+                </button>
+            </div>
+            <div class="flex justify-between items-center mt-2">
+                <!-- Ein kleiner, dezenter Button unter dem Chat-Input -->
+                <button hx-post="/admin/chat/clear"
+                        hx-target="#chat-response"
+                        hx-confirm="Möchtest du den bisherigen Chat-Verlauf wirklich löschen?"
+                        class="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 transition">
+                    <span>🗑️</span> Verlauf & Sprache zurücksetzen
                 </button>
             </div>
             <!-- Lade-Indikator für die KI-Gedenksekunde -->
