@@ -1,7 +1,9 @@
 package it.gdorsi.dao;
 
+import java.time.LocalDate;
+
 public record DocumentOverview(
         String fileName,
         long chunkCount,
-        String lastUpdated
+        LocalDate lastUpdated
 ) {}

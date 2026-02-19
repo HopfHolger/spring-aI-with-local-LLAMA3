@@ -94,7 +94,7 @@
                     <td class="p-3 font-medium" th:text="${doc.fileName}"></td>
                     <td class="p-3" th:text="${doc.chunkCount}"></td>
                     <td class="p-3 text-sm text-gray-500"
-                        th:text="${doc.lastUpdated != null ? #strings.substring(doc.lastUpdated,0,10) : 'Kein Datum'}">
+                        th:text="${doc.lastUpdated != null ? #temporals.format(doc.lastUpdated, 'dd.MM.yyyy') : 'Kein Datum'}">
                     </td>
                     <<td class="p-3 text-right flex gap-2 justify-end">
                         <button class="text-red-500 hover:text-red-700 font-medium"

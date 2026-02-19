@@ -16,7 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Configuration
 public class AiStartTestConfig {
 
-    @Bean
+ /*   @Bean
     CommandLineRunner testAi(VectorStore vectorStore) {
         return args -> {
             try {
@@ -64,7 +64,7 @@ public class AiStartTestConfig {
             System.out.println("Gefundene Treffer in der DB: " + results.size());
             vectorStore.delete(results.stream().map(Document::getId).toList());
         };
-    }
+    }*/
 
     @Bean
     CommandLineRunner checkDb(JdbcTemplate jdbcTemplate) {

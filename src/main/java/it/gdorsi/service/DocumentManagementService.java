@@ -27,8 +27,8 @@ public class DocumentManagementService {
         // Wir gruppieren nach dem file_name in den Metadaten
         String sql = """
                 SELECT metadata->>'file_name' as fileName,
-                    count(*) as chunks,
-                    max(metadata->>'ingested_at') as lastUpdate
+                       count(*) as chunks,
+                       max(to_timestamp((metadata->>'ingested_at')::double precision / 1000))::date as lastUpdate
                 FROM vector_store
                 GROUP BY metadata->>'file_name'
                 ORDER BY lastUpdate DESC
@@ -37,7 +37,7 @@ public class DocumentManagementService {
         return jdbcTemplate.query(sql, (rs, rowNum) -> new DocumentOverview(
                 rs.getString("fileName"),
                 rs.getLong("chunks"),
-                rs.getString("lastUpdate")
+                rs.getObject("lastUpdate", java.time.LocalDate.class)
         ));
     }
 
