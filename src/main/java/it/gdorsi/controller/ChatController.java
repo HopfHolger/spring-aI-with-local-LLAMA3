@@ -8,10 +8,10 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import it.gdorsi.service.AutorOperations;
 import jakarta.servlet.http.HttpSession;
@@ -106,22 +106,30 @@ public class ChatController {
      * }
      */
     @PostMapping("/admin/chat")
-    @ResponseBody
-    public String chat(@RequestParam("question") String question, HttpSession session) {
+    public String chat(@RequestParam("question") String question,
+                       @RequestParam(value = "lang", defaultValue = "Deutsch") String lang, // Default-Wert schützt vor Fehlern
+                       HttpSession session,
+                       Model model) {
+
+        // Wir packen die Instruktion direkt in den User-Teil
+        String enrichedQuestion = question + "\n\nIMPORTANT: Answer exclusively in " + lang + ".";
 
         try {
-            // Der Advisor übernimmt: Vektorsuche in PG + Kontext-Prompt + Ollama Call
-            return chatClient.prompt()
-                    // Set advisor parameters at runtime
+            String answer = chatClient.prompt()
+                    .system("Du bist ein Assistent. Nutze die Fakten aus der Datenbank.")
                     .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, session.getId()))
-                    .user(question)
-                    //.tools("saveAutorTool") // Expliziter Name der Bean/Methode
+                    .user(enrichedQuestion)
                     .call()
                     .content();
+
+            model.addAttribute("response", answer);
+            return "admin :: chatResponse"; // Jetzt rendert Thymeleaf das Fragment
         } catch (Exception e) {
-            return "❌ Fehler bei der KI-Anfrage: " + e.getMessage();
+            model.addAttribute("errorMessage", "KI-Fehler: " + e.getMessage());
+            return "admin :: errorFragment";
         }
     }
+
 
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

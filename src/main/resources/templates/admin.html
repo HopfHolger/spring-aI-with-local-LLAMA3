@@ -120,6 +120,10 @@
 
         <!-- Hier landet die Antwort der KI -->
         <div id="chat-response" class="min-h-[100px] p-4 mb-4 bg-gray-50 rounded border prose max-w-none">
+            <!-- Dieses Fragment wird vom Controller zurückgegeben -->
+            <div th:fragment="chatResponse" class="animate-fade-in">
+                <p class="text-gray-800" th:text="${response}"></p>
+            </div>
             <p class="text-gray-400 italic">Stelle eine Frage zu deinen Dokumenten...</p>
         </div>
 
@@ -127,12 +131,20 @@
               hx-target="#chat-response"
               hx-indicator="#chat-loading"
               hx-on::after-request="this.querySelector('input').value=''">
+            <!-- NEU: Sprach-Auswahl -->
+            <select name="lang" class="border p-2 rounded bg-white shadow-sm focus:ring-blue-500">
+                <option value="Deutsch">Deutsch 🇩🇪</option>
+                <option value="English">English 🇺🇸</option>
+                <option value="Français">Français 🇫🇷</option>
+                <option value="Español">Español 🇪🇸</option>
+                <option value="Italiano">Italiano 🇮🇹</option>
+            </select>
             <div class="flex gap-2">
                 <input type="text" name="question" required
                        class="flex-1 border p-2 rounded shadow-sm focus:ring-blue-500"
                        placeholder="Z.B.: Wie skaliere ich die Datenbank?">
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-                    Fragen
+                    Prompt
                 </button>
             </div>
             <!-- Lade-Indikator für die KI-Gedenksekunde -->
