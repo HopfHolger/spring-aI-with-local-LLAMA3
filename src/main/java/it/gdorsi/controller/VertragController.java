@@ -54,7 +54,8 @@ public class VertragController {
     }
 
     @PostMapping("/chat")
-    public String chat(@RequestParam("question") String question, Model model, HttpServletResponse response) {
+    public String chat(@RequestParam("question") String question, Model model,
+                       HttpServletResponse response) {
         try {
             // 1. RAG: Suche in der Vektor-DB
             var docs = vectorStore.similaritySearch(SearchRequest.builder()
@@ -81,7 +82,7 @@ public class VertragController {
 
             // 3. Oldschool Prompt mit OllamaChatOptions
             var options = OllamaChatOptions.builder()
-                    .toolCallbacks(toolCallbacks) // Die Liste aus deinem Konstruktor
+                    .toolCallbacks(toolCallbacks) // Die Liste aus dem Konstruktor
                     .build();
 
             Message systemMessage = new SystemMessage(systemText);
