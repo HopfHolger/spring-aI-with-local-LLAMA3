@@ -20,7 +20,7 @@ jobs:
 
     services:
       db:
-        image: pgvector/pgvector:latest
+        image: ankane/pgvector:latest
         env:
           POSTGRES_USER: dev
           POSTGRES_PASSWORD: pass
@@ -49,3 +49,19 @@ jobs:
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
       uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+
+      # HIER Docker Compose einfügen
+    - name: Start Database with Docker Compose
+      run: docker compose up -d
+
+      # WICHTIG: Kurze Pause, damit die DB Zeit zum Starten hat
+    - name: Wait for Database
+      run: sleep 15
+
+    - name: Run Maven Tests
+      run: mvn test
+
+      # Optional: Container nach den Tests wieder stoppen
+    - name: Stop Containers
+      if: always()
+      run: docker compose down
