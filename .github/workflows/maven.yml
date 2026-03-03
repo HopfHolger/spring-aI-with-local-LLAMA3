@@ -16,8 +16,24 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: pgvector/pgvector:latest
+        env:
+          POSTGRES_USER: dev
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: ai_db
+        ports:
+          - 5432:5432
+        # WICHTIG: Wartet, bis die DB wirklich antwortet
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
 
     steps:
     - uses: actions/checkout@v4
