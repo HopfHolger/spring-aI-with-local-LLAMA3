@@ -66,7 +66,7 @@ public class AiStartTestConfig {
         };
     }*/
 
-    @Bean
+    /*@Bean
     CommandLineRunner checkDb(JdbcTemplate jdbcTemplate) {
         return args -> {
             String url = null;
@@ -75,5 +75,5 @@ public class AiStartTestConfig {
             }
             System.out.println("Java schreibt aktuell in: " + url);
         };
-    }
+    }*/
 }
