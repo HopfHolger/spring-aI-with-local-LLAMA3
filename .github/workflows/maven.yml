@@ -54,9 +54,19 @@ jobs:
     - name: Start Database with Docker Compose
       run: docker compose up -d
 
-      # WICHTIG: Kurze Pause, damit die DB Zeit zum Starten hat
-    - name: Wait for Database
-      run: sleep 15
+    - name: Wait for Database to be ready
+      run: |
+        # Wartet maximal 60 Sekunden, bis der Container 'healthy' meldet
+        for i in {1..12}; do
+          if [ "$(docker inspect --format='{{.State.Health.Status}}' $(docker compose ps -q db))" == "healthy" ]; then
+            echo "Database is ready!"
+            exit 0
+          fi
+          echo "Waiting for database... ($i)"
+          sleep 5
+        done
+        echo "Database failed to start in time"
+        exit 1
 
     - name: Run Maven Tests
       run: mvn test
