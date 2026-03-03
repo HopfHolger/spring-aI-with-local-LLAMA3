@@ -10,6 +10,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -24,8 +25,8 @@ import jakarta.persistence.Timeout;
 public class AiConfig {
 
     @Bean
-    @Profile("!test") // Wird nur geladen, wenn das Profil "test" NICHT aktiv ist
-    public PgVectorStore vectorStore(JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
+    @Primary
+    public VectorStore vectorStore(JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
         return PgVectorStore.builder(jdbcTemplate, embeddingModel)
                 .dimensions(1024)            // Dein mxbai-embed-large Wert
                 .distanceType(PgVectorStore.PgDistanceType.COSINE_DISTANCE)
