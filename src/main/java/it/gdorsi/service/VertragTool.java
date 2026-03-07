@@ -11,7 +11,9 @@ import it.gdorsi.repository.model.Vertrag;
 import it.gdorsi.repository.model.VertragStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class VertragTool implements VertragOperations {
@@ -20,55 +22,70 @@ public class VertragTool implements VertragOperations {
     private final EmbeddingModel embeddingModel;
 
     @Override
-    @Transactional // Stellt Datenkonsistenz sicher
+    @Transactional
     public String saveContractFromPdf(VertragRequest req) {
-        // 1. Bestehenden Vertrag suchen (Idempotenz) oder neuen erstellen
-        Vertrag vertrag = repository.findByVertragsNummer(req.vertragsNummer())
-                .orElse(new Vertrag());
+        if (req == null) {
+            return "Fehler: VertragRequest ist null.";
+        }
+        if (req.vertragsNummer() == null || req.vertragsNummer().isBlank()) {
+            return "Fehler: Vertragsnummer darf nicht leer sein.";
+        }
+        
+        try {
+            Vertrag vertrag = repository.findByVertragsNummer(req.vertragsNummer())
+                    .orElse(new Vertrag());
 
-        // 2. Felder mappen (8 Felder aus deinem JPA Model)
-        vertrag.setVertragsNummer(req.vertragsNummer());
-        vertrag.setKundeName(req.kundeName());
-        vertrag.setStartDatum(req.startDatum());
-        vertrag.setEndDatum(req.endDatum());
-        vertrag.setBetrag(BigDecimal.valueOf(req.betrag()));
-        vertrag.setVertragsTyp(req.vertragsTyp());
-        vertrag.setStatus(req.status());
-        vertrag.setBemerkung(req.bemerkung());
+            vertrag.setVertragsNummer(req.vertragsNummer());
+            vertrag.setKundeName(req.kundeName());
+            vertrag.setStartDatum(req.startDatum());
+            vertrag.setEndDatum(req.endDatum());
+            vertrag.setBetrag(req.betrag() != null ? BigDecimal.valueOf(req.betrag()) : null);
+            vertrag.setVertragsTyp(req.vertragsTyp());
+            vertrag.setStatus(req.status());
+            vertrag.setBemerkung(req.bemerkung());
 
-        // 3. Vektor erzeugen (Verhindert den Hibernate Null-Fehler!)
-        // Wir nehmen wichtige Textfelder für das Embedding
-        String textForAi = String.format("%s - %s: %s",
-                req.kundeName(), req.vertragsTyp(), req.bemerkung());
-        float[] vector = embeddingModel.embed(textForAi);
-        vertrag.setVertragEmbedding(vector);
+            String textForAi = String.format("%s - %s: %s",
+                    req.kundeName() != null ? req.kundeName() : "",
+                    req.vertragsTyp() != null ? req.vertragsTyp() : "",
+                    req.bemerkung() != null ? req.bemerkung() : "");
+            float[] vector = embeddingModel.embed(textForAi);
+            vertrag.setVertragEmbedding(vector);
 
-        // 4. Speichern
-        repository.save(vertrag);
+            repository.save(vertrag);
 
-        return String.format("Vertrag %s für Kunde %s erfolgreich in der DB erfasst.",
-                req.vertragsNummer(), req.kundeName());
+            return String.format("Vertrag %s für Kunde %s erfolgreich in der DB erfasst.",
+                    req.vertragsNummer(), req.kundeName());
+        } catch (Exception e) {
+            log.error("Fehler beim Speichern des Vertrags {}: {}", req.vertragsNummer(), e.getMessage(), e);
+            return "Fehler beim Speichern des Vertrags: " + e.getMessage();
+        }
     }
 
     @Override
+    @Transactional
     public String updateContractStatusOrAmount(String vertragsNummer, Double betrag, VertragStatus status) {
-        return repository.findByVertragsNummer(vertragsNummer)
-                .map(vertrag -> {
-                    if (betrag != null) vertrag.setBetrag(BigDecimal.valueOf(betrag));
-                    if (status != null) {
-                        VertragStatus validatedStatus = VertragStatus.fromString(status.name());
+        if (vertragsNummer == null || vertragsNummer.isBlank()) {
+            return "Fehler: Vertragsnummer darf nicht leer sein.";
+        }
+        
+        try {
+            return repository.findByVertragsNummer(vertragsNummer)
+                    .map(vertrag -> {
+                        if (betrag != null) vertrag.setBetrag(BigDecimal.valueOf(betrag));
+                        if (status != null) {
+                            VertragStatus validatedStatus = VertragStatus.fromString(status.name());
 
-                        // Nur wenn die KI einen ECHTEN Status (Aktiv/Entwurf/Gekündigt)
-                        // gesendet hat, wird das Feld in der DB angefasst.
-                        if (validatedStatus != null) {
-                            vertrag.setStatus(validatedStatus);
+                            if (validatedStatus != null) {
+                                vertrag.setStatus(validatedStatus);
+                            }
                         }
-                        // Falls validatedStatus null ist (z.B. bei "<keine Änderung>"),
-                        // passiert hier NICHTS. Der alte Status bleibt erhalten.
-                    }
-                    repository.save(vertrag);
-                    return "Vertrag " + vertragsNummer + " wurde erfolgreich aktualisiert.";
-                })
-                .orElse("Fehler: Vertrag mit Nummer " + vertragsNummer + " nicht gefunden.");
+                        repository.save(vertrag);
+                        return "Vertrag " + vertragsNummer + " wurde erfolgreich aktualisiert.";
+                    })
+                    .orElse("Fehler: Vertrag mit Nummer " + vertragsNummer + " nicht gefunden.");
+        } catch (Exception e) {
+            log.error("Fehler beim Aktualisieren des Vertrags {}: {}", vertragsNummer, e.getMessage(), e);
+            return "Fehler beim Aktualisieren des Vertrags: " + e.getMessage();
+        }
     }
 }

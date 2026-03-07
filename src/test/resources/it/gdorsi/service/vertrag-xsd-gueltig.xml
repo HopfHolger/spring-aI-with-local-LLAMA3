@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vertrag>
+    <vertragsNummer>V-2024-001</vertragsNummer>
+    <kundeName>Max Mustermann</kundeName>
+    <startDatum>2024-01-01</startDatum>
+    <endDatum>2024-12-31</endDatum>
+    <betrag>1500.00</betrag>
+    <vertragsTyp>Service</vertragsTyp>
+    <status>AKTIV</status>
+    <bemerkung>Testvertrag</bemerkung>
+</vertrag>

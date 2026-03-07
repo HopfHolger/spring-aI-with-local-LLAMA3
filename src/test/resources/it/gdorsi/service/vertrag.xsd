@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="vertrag">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="vertragsNummer" type="xs:string"/>
+                <xs:element name="kundeName" type="xs:string"/>
+                <xs:element name="startDatum" type="xs:date" minOccurs="0"/>
+                <xs:element name="endDatum" type="xs:date" minOccurs="0"/>
+                <xs:element name="betrag" type="xs:decimal" minOccurs="0"/>
+                <xs:element name="vertragsTyp" type="xs:string" minOccurs="0"/>
+                <xs:element name="status" type="xs:string" minOccurs="0"/>
+                <xs:element name="bemerkung" type="xs:string" minOccurs="0"/>
+                <xs:any namespace="##other" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

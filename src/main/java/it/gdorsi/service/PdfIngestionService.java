@@ -1,9 +1,13 @@
 package it.gdorsi.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
@@ -11,6 +15,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import it.gdorsi.dao.PdfIngestResult;
 import jakarta.annotation.PostConstruct;
@@ -23,8 +28,9 @@ import jakarta.annotation.PostConstruct;
 @Service
 public class PdfIngestionService {
 
-    private final VectorStore vectorStore;
+    private static final Logger log = LoggerFactory.getLogger(PdfIngestionService.class);
 
+    private final VectorStore vectorStore;
     private final JdbcTemplate jdbcTemplate;
 
     public PdfIngestionService(VectorStore vectorStore, JdbcTemplate jdbcTemplate) {
@@ -32,120 +38,130 @@ public class PdfIngestionService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /**
-     * update und insert
-     *
-     * @param pdfResource PDF
-     */
+    @Transactional
     public PdfIngestResult loadPdf(Resource pdfResource) {
-
         long startTime = System.currentTimeMillis();
-        int newCount = 0;
-        int updateCount = 0;
 
-        // Tika ist wesentlich toleranter gegenüber fehlenden System-Fonts
-        final TikaDocumentReader tikaReader = new TikaDocumentReader(pdfResource);
-
-        // 2. Text splitten (wichtig, damit die KI nicht überfordert wird)
-        // TokenTextSplitter achtet darauf, dass Sinnzusammenhänge erhalten bleiben
-        // In deinem PdfIngestionService
-        // vermeiden 500] Internal Server Error - {"error":"the input length exceeds the context length"}
-        // Modelle wie mxbai-embed-large haben meist ein Limit von 512 oder 1024 Tokens. Ein typisches PDF-Dokument hat aber tausende.
-        final TokenTextSplitter splitter = TokenTextSplitter.builder()
-                .withChunkSize(300)
-                .withMaxNumChunks(5000)
-                .withKeepSeparator(true)
-                .build();
-
-        // 3. Transformation & Speicherung
-        // apply() liest das PDF, splittet es und gibt eine Liste von Documents zurück
-        List<Document> documents = splitter.apply(tikaReader.get());
-        if (documents.isEmpty()) { // zum Sehen ob etwas extrahiert wurde, bei nur Bilder ZB
-            System.err.println("WARNUNG: Keine Texte im PDF gefunden!");
+        if (pdfResource == null || pdfResource.getFilename() == null) {
+            throw new IllegalArgumentException("PDF Resource oder Dateiname darf nicht null sein.");
         }
 
         String fileName = pdfResource.getFilename();
 
-        List<String> currentChunkIds = new ArrayList<>();
-
-        // call jetzt idempotent - vorher delete unnötig, gleicher hash kommt nie vor insert wird update
-        for (Document doc : documents) {
-            doc.getMetadata().put("file_name", pdfResource.getFilename()); // besser zum Löschen
-            doc.getMetadata().put("ingested_at", System.currentTimeMillis()); // vermeidet neuanlage
-            // Wir erzeugen eine ID aus Dateiname + Inhalt-Hash
-            final String customId = pdfResource.getFilename() + (doc.getText() != null ? doc.getText().hashCode() : 0);
-
-            // WICHTIG: UUID aus dem String generieren (Postgres pgvector nutzt meist UUIDs)
-            final UUID deterministicId = UUID.nameUUIDFromBytes(customId.getBytes());
-            currentChunkIds.add(deterministicId.toString());
-
-            Document docWithFixedId;
-            if (doc.getText() != null) {
-                docWithFixedId = new Document(
-                        deterministicId.toString(),
-                        doc.getText(),
-                        doc.getMetadata()
-                );
-            } else {
-                continue;
-            }
-
-            if (exists(docWithFixedId.getId())) {
-                updateCount++;
-                long oldTime = (long) docWithFixedId.getMetadata().get("ingested_at");
-                System.out.println("Update: Alter Zeitstempel war " + oldTime);
-
-                docWithFixedId.getMetadata().put("ingested_at", System.currentTimeMillis());
-                vectorStore.accept(List.of(docWithFixedId));
-                System.out.println("Ingestion of " + fileName + " finished. Chunks" + documents.size() + " update.");
-            } else {
-                newCount++;
-                docWithFixedId.getMetadata().put("ingested_at", System.currentTimeMillis());
-                vectorStore.accept(List.of(docWithFixedId));
-                System.out.println("Ingestion of " + fileName + " finished. Chunks" + documents.size() + " insert.");
-            }
-        }
-
-        // 3. CLEANUP: Lösche alle Chunks dieses Files, die NICHT in currentChunkIds sind
-        // Das entfernt "verwaiste" Chunks, wenn das PDF gekürzt wurde.
-        if (!currentChunkIds.isEmpty()) {
-            // Wir bauen ein Array aus den UUIDs für den Postgres-Operator '= ANY' oder 'NOT IN'
-            String[] idArray = currentChunkIds.toArray(new String[0]);
-
-            final String sqlCleanup = """
-                    DELETE FROM vector_store WHERE metadata->>'file_name' = ? AND NOT (id = ANY(?::uuid[]))
-                    """;
-
-            int deletedLeichen = jdbcTemplate.update(sqlCleanup, fileName, idArray);
-            System.out.println("Cleanup: " + deletedLeichen + " verwaiste Chunks entfernt.");
-        }
-
-        return new PdfIngestResult(
-                pdfResource.getFilename(),
-                documents.size(),
-                newCount,
-                updateCount,
-                System.currentTimeMillis() - startTime
-        );
-    }
-
-    public boolean exists(final String docId) {
         try {
-            // Wir nutzen 'EXISTS' und einen expliziten Cast, das ist performanter
-            final String sql = "SELECT EXISTS(SELECT 1 FROM vector_store WHERE id = CAST(? AS uuid))";
-            return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, Boolean.class, docId));
+            final TikaDocumentReader tikaReader = new TikaDocumentReader(pdfResource);
+
+            final TokenTextSplitter splitter = TokenTextSplitter.builder()
+                    .withChunkSize(300)
+                    .withMaxNumChunks(5000)
+                    .withKeepSeparator(true)
+                    .build();
+
+            List<Document> documents = splitter.apply(tikaReader.get());
+            if (documents.isEmpty()) {
+                log.warn("Keine Texte im PDF gefunden: {}", fileName);
+            }
+
+            List<String> currentChunkIds = new ArrayList<>();
+            List<Document> newDocuments = new ArrayList<>();
+            List<Document> updateDocuments = new ArrayList<>();
+
+            Set<String> existingIds = fetchExistingIds(documents);
+
+            for (Document doc : documents) {
+                doc.getMetadata().put("file_name", fileName);
+                doc.getMetadata().put("ingested_at", System.currentTimeMillis());
+
+                String customId = fileName + (doc.getText() != null ? doc.getText().hashCode() : 0);
+                final UUID deterministicId = UUID.nameUUIDFromBytes(customId.getBytes());
+                String docId = deterministicId.toString();
+
+                currentChunkIds.add(docId);
+
+                if (doc.getText() == null) {
+                    continue;
+                }
+
+                Document docWithFixedId = new Document(docId, doc.getText(), doc.getMetadata());
+
+                if (existingIds.contains(docId)) {
+                    updateDocuments.add(docWithFixedId);
+                } else {
+                    newDocuments.add(docWithFixedId);
+                }
+            }
+
+            int newCount = newDocuments.size();
+            int updateCount = updateDocuments.size();
+
+            if (!newDocuments.isEmpty()) {
+                vectorStore.accept(newDocuments);
+                log.info("Ingestion of {} finished. {} new chunks inserted.", fileName, newCount);
+            }
+
+            if (!updateDocuments.isEmpty()) {
+                vectorStore.accept(updateDocuments);
+                log.info("Ingestion of {} finished. {} chunks updated.", fileName, updateCount);
+            }
+
+            cleanupOrphanedChunks(fileName, currentChunkIds);
+
+            return new PdfIngestResult(
+                    fileName,
+                    documents.size(),
+                    newCount,
+                    updateCount,
+                    System.currentTimeMillis() - startTime
+            );
+
         } catch (Exception e) {
-            System.err.println("Fehler beim ID-Check: " + e.getMessage());
-            return false;
+            log.error("Fehler beim Laden des PDFs {}: {}", fileName, e.getMessage(), e);
+            throw new RuntimeException("PDF-Verarbeitung fehlgeschlagen: " + fileName, e);
         }
     }
 
+    private Set<String> fetchExistingIds(List<Document> documents) {
+        if (documents.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        List<String> potentialIds = new ArrayList<>();
+        for (Document doc : documents) {
+            String fileName = (String) doc.getMetadata().getOrDefault("file_name", "");
+            String customId = fileName + (doc.getText() != null ? doc.getText().hashCode() : 0);
+            potentialIds.add(UUID.nameUUIDFromBytes(customId.getBytes()).toString());
+        }
+
+        String placeholders = String.join(",", java.util.Collections.nCopies(potentialIds.size(), "?"));
+        String sql = "SELECT id FROM vector_store WHERE id IN (" + placeholders + ")";
+
+        String[] idArray = new String[potentialIds.size()];
+        String[] paramArray = potentialIds.toArray(idArray);
+        return new HashSet<>(jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("id"),
+                (Object) paramArray));
+    }
+
+    private void cleanupOrphanedChunks(String fileName, List<String> currentChunkIds) {
+        if (currentChunkIds.isEmpty()) {
+            return;
+        }
+
+        String[] idArray = new String[currentChunkIds.size()];
+        String[] paramArray = currentChunkIds.toArray(idArray);
+
+        final String sqlCleanup = """
+                DELETE FROM vector_store WHERE metadata->>'file_name' = ? AND NOT (id = ANY(?::uuid[]))
+                """;
+
+        int deletedLeichen = jdbcTemplate.update(sqlCleanup, fileName, (Object) paramArray);
+        if (deletedLeichen > 0) {
+            log.info("Cleanup: {} verwaiste Chunks entfernt.", deletedLeichen);
+        }
+    }
 
     @PostConstruct
     public void init() {
         // Verhindert, dass PDFBox bei fehlenden Fonts hart abbricht
         System.setProperty("pdfbox.fontcache.enabled", "false");
     }
-
-
 }

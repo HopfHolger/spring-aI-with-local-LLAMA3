@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vertrag>
+    <vertragsNummer>V-2024-001</vertragsNummer>
+    <kundeName>Max Mustermann</kundeName>
+    <!-- Fehlendes schließendes Tag -->
+    <startDatum>2024-01-01</startDatum>
