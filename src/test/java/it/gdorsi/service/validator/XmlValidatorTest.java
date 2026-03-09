@@ -1,4 +1,4 @@
-package it.gdorsi.service;
+package it.gdorsi.service.validator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import it.gdorsi.dao.XmlValidationResult;
+import it.gdorsi.service.validation.XmlValidator;
 
 class XmlValidatorTest {
 

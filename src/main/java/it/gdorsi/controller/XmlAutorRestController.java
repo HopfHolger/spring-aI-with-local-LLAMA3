@@ -1,6 +1,6 @@
 package it.gdorsi.controller;
 
-import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -15,50 +15,58 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import it.gdorsi.service.XmlAutorService;
+import it.gdorsi.repository.model.XmlDokument;
+import it.gdorsi.service.XmlDokumentService;
 
 @RestController
 @RequestMapping("/api/autoren/{autorId}/xml")
 public class XmlAutorRestController {
 
-    private final XmlAutorService xmlAutorService;
+    private final XmlDokumentService xmlDokumentService;
 
-    public XmlAutorRestController(XmlAutorService xmlAutorService) {
-        this.xmlAutorService = xmlAutorService;
+    public XmlAutorRestController(XmlDokumentService xmlDokumentService) {
+        this.xmlDokumentService = xmlDokumentService;
     }
 
     @PostMapping
-    public ResponseEntity<File> createXml(
+    public ResponseEntity<String> createXml(
             @PathVariable Long autorId,
-            @RequestParam("file") MultipartFile file) {
-        File tempFile = convertToFile(file);
-        File savedFile = xmlAutorService.createXmlFuerAutor(autorId, tempFile);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedFile);
+            @RequestParam("file") MultipartFile file) throws IOException {
+
+        String inhalt = new String(file.getBytes());
+        String dateiname = file.getOriginalFilename();
+
+        xmlDokumentService.saveXml(autorId, dateiname, inhalt);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("XML gespeichert: " + dateiname);
     }
 
     @GetMapping
-    public ResponseEntity<List<File>> getAllXmlForAutor(@PathVariable Long autorId) {
-        List<File> xmlFiles = xmlAutorService.getAllXmlForAutor(autorId);
-        return ResponseEntity.ok(xmlFiles);
+    public ResponseEntity<List<XmlDokument>> getAllXmlForAutor(@PathVariable Long autorId) {
+        List<XmlDokument> xmlDokumente = xmlDokumentService.findByAutorId(autorId);
+        return ResponseEntity.ok(xmlDokumente);
     }
 
     @GetMapping("/{xmlId}")
-    public ResponseEntity<File> getXmlById(
+    public ResponseEntity<XmlDokument> getXmlById(
             @PathVariable Long autorId,
             @PathVariable Long xmlId) {
-        return xmlAutorService.getXmlByAutorId(autorId)
+        return xmlDokumentService.findByIdAndAutorId(xmlId, autorId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{xmlId}")
-    public ResponseEntity<File> updateXml(
+    public ResponseEntity<String> updateXml(
             @PathVariable Long autorId,
             @PathVariable Long xmlId,
-            @RequestParam("file") MultipartFile file) {
-        File tempFile = convertToFile(file);
-        return xmlAutorService.updateXmlForAutor(autorId, tempFile)
-                .map(ResponseEntity::ok)
+            @RequestParam("file") MultipartFile file) throws IOException {
+
+        String inhalt = new String(file.getBytes());
+        String dateiname = file.getOriginalFilename();
+
+        return xmlDokumentService.updateXml(autorId, xmlId, dateiname, inhalt)
+                .map(updated -> ResponseEntity.ok("XML aktualisiert: " + dateiname))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -66,19 +74,7 @@ public class XmlAutorRestController {
     public ResponseEntity<Void> deleteXml(
             @PathVariable Long autorId,
             @PathVariable Long xmlId) {
-        if (xmlAutorService.deleteXmlForAutor(autorId)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    private File convertToFile(MultipartFile multipartFile) {
-        try {
-            File tempFile = File.createTempFile("xml-", ".xml");
-            multipartFile.transferTo(tempFile);
-            return tempFile;
-        } catch (Exception e) {
-            throw new RuntimeException("Fehler beim Konvertieren der Datei", e);
-        }
+        boolean deleted = xmlDokumentService.deleteXml(autorId, xmlId);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }

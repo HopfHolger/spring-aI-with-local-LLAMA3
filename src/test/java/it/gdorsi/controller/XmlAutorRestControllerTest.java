@@ -2,6 +2,7 @@ package it.gdorsi.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -9,7 +10,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +26,9 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import it.gdorsi.service.XmlAutorService;
+import it.gdorsi.repository.model.Autor;
+import it.gdorsi.repository.model.XmlDokument;
+import it.gdorsi.service.XmlDokumentService;
 
 @ExtendWith(MockitoExtension.class)
 class XmlAutorRestControllerTest {
@@ -34,12 +36,14 @@ class XmlAutorRestControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private XmlAutorService xmlAutorService;
+    private XmlDokumentService xmlDokumentService;
 
     @InjectMocks
     private XmlAutorRestController xmlAutorRestController;
 
     private MockMultipartFile xmlFile;
+    private Autor autor;
+    private XmlDokument xmlDokument;
 
     @BeforeEach
     void setUp() {
@@ -51,6 +55,16 @@ class XmlAutorRestControllerTest {
                 MediaType.APPLICATION_XML_VALUE,
                 "<test>daten</test>".getBytes()
         );
+
+        autor = new Autor();
+        autor.setId(1L);
+        autor.setName("Test Autor");
+
+        xmlDokument = new XmlDokument();
+        xmlDokument.setId(5L);
+        xmlDokument.setDateiname("test.xml");
+        xmlDokument.setInhalt("<test>daten</test>");
+        xmlDokument.setAutor(autor);
     }
 
     @Nested
@@ -60,8 +74,7 @@ class XmlAutorRestControllerTest {
         @Test
         @DisplayName("Erstellt XML erfolgreich")
         void createXml_success() throws Exception {
-            File mockFile = new File("/tmp/test.xml");
-            when(xmlAutorService.createXmlFuerAutor(anyLong(), any(File.class))).thenReturn(mockFile);
+            when(xmlDokumentService.saveXml(eq(1L), any(), any())).thenReturn(xmlDokument);
 
             mockMvc.perform(multipart("/api/autoren/1/xml")
                             .file(xmlFile))
@@ -76,7 +89,7 @@ class XmlAutorRestControllerTest {
         @Test
         @DisplayName("Gibt alle XMLs für Autor zurück")
         void getAllXml_success() throws Exception {
-            when(xmlAutorService.getAllXmlForAutor(1L)).thenReturn(List.of());
+            when(xmlDokumentService.findByAutorId(1L)).thenReturn(List.of(xmlDokument));
 
             mockMvc.perform(get("/api/autoren/1/xml"))
                     .andExpect(status().isOk())
@@ -91,8 +104,7 @@ class XmlAutorRestControllerTest {
         @Test
         @DisplayName("Gibt XML nach ID zurück")
         void getXmlById_found() throws Exception {
-            File mockFile = new File("/tmp/test.xml");
-            when(xmlAutorService.getXmlByAutorId(1L)).thenReturn(Optional.of(mockFile));
+            when(xmlDokumentService.findByIdAndAutorId(5L, 1L)).thenReturn(Optional.of(xmlDokument));
 
             mockMvc.perform(get("/api/autoren/1/xml/5"))
                     .andExpect(status().isOk());
@@ -101,7 +113,7 @@ class XmlAutorRestControllerTest {
         @Test
         @DisplayName("Gibt 404 wenn nicht gefunden")
         void getXmlById_notFound() throws Exception {
-            when(xmlAutorService.getXmlByAutorId(1L)).thenReturn(Optional.empty());
+            when(xmlDokumentService.findByIdAndAutorId(999L, 1L)).thenReturn(Optional.empty());
 
             mockMvc.perform(get("/api/autoren/1/xml/999"))
                     .andExpect(status().isNotFound());
@@ -115,9 +127,7 @@ class XmlAutorRestControllerTest {
         @Test
         @DisplayName("Aktualisiert XML erfolgreich")
         void updateXml_success() throws Exception {
-            File mockFile = new File("/tmp/test.xml");
-            when(xmlAutorService.updateXmlForAutor(anyLong(), any(File.class)))
-                    .thenReturn(Optional.of(mockFile));
+            when(xmlDokumentService.updateXml(eq(1L), eq(5L), any(), any())).thenReturn(Optional.of(xmlDokument));
 
             mockMvc.perform(multipart("/api/autoren/1/xml/5")
                             .file(xmlFile)
@@ -131,7 +141,7 @@ class XmlAutorRestControllerTest {
         @Test
         @DisplayName("Gibt 404 bei nicht gefunden")
         void updateXml_notFound() throws Exception {
-            when(xmlAutorService.updateXmlForAutor(anyLong(), any(File.class)))
+            when(xmlDokumentService.updateXml(eq(1L), eq(999L), any(), any()))
                     .thenReturn(Optional.empty());
 
             mockMvc.perform(multipart("/api/autoren/1/xml/999")
@@ -142,6 +152,29 @@ class XmlAutorRestControllerTest {
                             }))
                     .andExpect(status().isNotFound());
         }
+
+        @Test
+        @DisplayName("PUT ist idempotent - gleiche Anfrage gibt gleiche Antwort")
+        void updateXml_idempotent() throws Exception {
+            when(xmlDokumentService.updateXml(eq(1L), eq(5L), eq("test.xml"), eq("<test>daten</test>")))
+                    .thenReturn(Optional.of(xmlDokument));
+
+            mockMvc.perform(multipart("/api/autoren/1/xml/5")
+                            .file(xmlFile)
+                            .with(request -> {
+                                request.setMethod("PUT");
+                                return request;
+                            }))
+                    .andExpect(status().isOk());
+
+            mockMvc.perform(multipart("/api/autoren/1/xml/5")
+                            .file(xmlFile)
+                            .with(request -> {
+                                request.setMethod("PUT");
+                                return request;
+                            }))
+                    .andExpect(status().isOk());
+        }
     }
 
     @Nested
@@ -151,7 +184,7 @@ class XmlAutorRestControllerTest {
         @Test
         @DisplayName("Löscht XML erfolgreich")
         void deleteXml_success() throws Exception {
-            when(xmlAutorService.deleteXmlForAutor(1L)).thenReturn(true);
+            when(xmlDokumentService.deleteXml(1L, 5L)).thenReturn(true);
 
             mockMvc.perform(delete("/api/autoren/1/xml/5"))
                     .andExpect(status().isNoContent());
@@ -160,7 +193,7 @@ class XmlAutorRestControllerTest {
         @Test
         @DisplayName("Gibt 404 bei nicht gefunden")
         void deleteXml_notFound() throws Exception {
-            when(xmlAutorService.deleteXmlForAutor(1L)).thenReturn(false);
+            when(xmlDokumentService.deleteXml(1L, 999L)).thenReturn(false);
 
             mockMvc.perform(delete("/api/autoren/1/xml/999"))
                     .andExpect(status().isNotFound());

@@ -11,15 +11,12 @@ import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.web.client.RestClient;
 
-import it.gdorsi.service.VertragTool;
-import jakarta.persistence.Timeout;
+import it.gdorsi.service.tool.VertragTool;
 
 @Configuration
 public class AiConfig {

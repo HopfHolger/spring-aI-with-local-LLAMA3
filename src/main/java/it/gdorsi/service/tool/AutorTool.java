@@ -1,4 +1,4 @@
-package it.gdorsi.service;
+package it.gdorsi.service.tool;
 
 import java.util.stream.Collectors;
 
@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import it.gdorsi.dao.AutorRequest;
 import it.gdorsi.repository.AuthorRepository;
 import it.gdorsi.repository.model.Autor;
+import it.gdorsi.service.AutorOperations;
 import jakarta.transaction.Transactional;
 
 /**

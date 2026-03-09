@@ -1,4 +1,4 @@
-package it.gdorsi.service;
+package it.gdorsi.service.tool;
 
 import java.math.BigDecimal;
 
@@ -9,6 +9,7 @@ import it.gdorsi.dao.VertragRequest;
 import it.gdorsi.repository.VertragRepository;
 import it.gdorsi.repository.model.Vertrag;
 import it.gdorsi.repository.model.VertragStatus;
+import it.gdorsi.service.VertragOperations;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
