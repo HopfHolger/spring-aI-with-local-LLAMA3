@@ -24,4 +24,7 @@ public interface XmlOperations {
 
     @Tool(description = "Löscht ein spezifisches XML-Dokument nach ID")
     String deleteXmlById(String autorName, Long xmlId);
+
+    @Tool(description = "Sucht ähnliche XML-Dokumente basierend auf einer semantischen Anfrage")
+    XmlListResponse searchSimilarXml(String query, int limit);
 }

@@ -18,4 +18,8 @@ public record XmlListResponse(
     public static XmlListResponse empty(String autorName) {
         return new XmlListResponse(List.of(), 0, "KEINE_DOKUMENTE: Keine XML-Dokumente für Autor " + autorName + " gefunden");
     }
+    
+    public static XmlListResponse searchResults(List<XmlResponse> dokumente, String query) {
+        return new XmlListResponse(dokumente, dokumente.size(), "SUCHERGEBNISSE für: " + query);
+    }
 }

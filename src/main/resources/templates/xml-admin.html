@@ -141,6 +141,77 @@
             </form>
         </div>
 
+        <!-- Bereich 5: RAG-Semantische Suche & Chat -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-md border-2 border-blue-200 mb-8">
+            <h2 class="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2">
+                <span>🔍</span> RAG-Semantische Suche in XML-Dokumenten
+            </h2>
+            
+            <p class="text-sm text-blue-600 mb-4">
+                Durchsuche alle XML-Dokumente semantisch und stelle Fragen basierend auf den gefundenen Dokumenten.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Semantische Suche -->
+                <div class="bg-white p-4 rounded-xl border border-blue-100">
+                    <h3 class="font-bold text-blue-700 mb-2">Semantische Suche</h3>
+                    <form hx-post="/admin/xml/rag/search" hx-target="#rag-search-results" hx-indicator="#rag-search-loading">
+                        <div class="flex gap-2">
+                            <input type="text" name="query" required
+                                   class="flex-1 border-2 border-blue-200 p-2 rounded-lg outline-none focus:border-blue-400"
+                                   placeholder="Suchbegriff oder Frage eingeben...">
+                            <select name="limit" class="border-2 border-blue-200 p-2 rounded-lg bg-white">
+                                <option value="3">3 Ergebnisse</option>
+                                <option value="5" selected>5 Ergebnisse</option>
+                                <option value="10">10 Ergebnisse</option>
+                            </select>
+                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition">
+                                Suchen
+                            </button>
+                        </div>
+                        <div id="rag-search-loading" class="htmx-indicator mt-2 text-blue-600 flex items-center gap-2">
+                            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            <span class="text-sm font-medium">Suche ähnliche XML-Dokumente...</span>
+                        </div>
+                    </form>
+                    <div id="rag-search-results" class="mt-4">
+                        <!-- Hier werden die Suchergebnisse angezeigt -->
+                    </div>
+                </div>
+
+                <!-- RAG-Chat -->
+                <div class="bg-white p-4 rounded-xl border border-purple-100">
+                    <h3 class="font-bold text-purple-700 mb-2">RAG-Chat mit XML-Dokumenten</h3>
+                    <form hx-post="/admin/xml/rag/chat" hx-target="#rag-chat-response" hx-indicator="#rag-chat-loading">
+                        <div class="flex gap-2">
+                            <input type="text" name="query" required
+                                   class="flex-1 border-2 border-purple-200 p-2 rounded-lg outline-none focus:border-purple-400"
+                                   placeholder="Frage zu XML-Dokumenten stellen...">
+                            <select name="limit" class="border-2 border-purple-200 p-2 rounded-lg bg-white">
+                                <option value="1">1 Dokument</option>
+                                <option value="2">2 Dokumente</option>
+                                <option value="3" selected>3 Dokumente</option>
+                            </select>
+                            <button type="submit" class="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-purple-700 transition">
+                                Fragen
+                            </button>
+                        </div>
+                        <div id="rag-chat-loading" class="htmx-indicator mt-2 text-purple-600 flex items-center gap-2">
+                            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                            <span class="text-sm font-medium">KI sucht Dokumente und generiert Antwort...</span>
+                        </div>
+                    </form>
+                    <div id="rag-chat-response" class="mt-4">
+                        <!-- Hier werden die RAG-Chat-Antworten angezeigt -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-xs text-blue-500">
+                <p>💡 <strong>Tipp:</strong> Die RAG-Suche findet ähnliche XML-Dokumente basierend auf semantischer Bedeutung, nicht nur exakten Textübereinstimmungen.</p>
+            </div>
+        </div>
+
     </div>
 </div>
 
