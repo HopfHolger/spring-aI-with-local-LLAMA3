@@ -5,12 +5,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
+
+import it.gdorsi.repository.model.type.NullSafeVectorType;
 
 @Entity
 @Table(name = "xml_dokument")
@@ -26,8 +30,8 @@ public class XmlDokument {
     private String inhalt;
 
     @Column(name = "xml_embedding", columnDefinition = "vector(1024)")
-    @JdbcTypeCode(SqlTypes.VECTOR)
-    private float[] xmlEmbedding;
+    @org.hibernate.annotations.Type(NullSafeVectorType.class)
+    private float[] xmlEmbedding = new float[0];
 
     @ManyToOne
     @JoinColumn(name = "autor_id", nullable = false)

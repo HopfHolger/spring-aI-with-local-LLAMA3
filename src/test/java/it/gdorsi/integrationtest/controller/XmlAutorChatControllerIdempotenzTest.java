@@ -1,4 +1,4 @@
-package it.gdorsi.integration.controller;
+package it.gdorsi.integrationtest.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,9 +8,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
+import config.TestConfig;
 import it.gdorsi.repository.AuthorRepository;
 import it.gdorsi.repository.XmlDokumentRepository;
 import it.gdorsi.repository.model.Autor;
@@ -20,14 +21,10 @@ import it.gdorsi.service.XmlDokumentService;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Aud H2-Ebene, ohne Controller, da es Probleme mit Spring Boot 4
- * und Multipart upload gibt.
- */
 @SpringBootTest
+@Import(TestConfig.class)
 @ActiveProfiles("test")
-@Transactional
-class XmlAutorRestControllerIdempotenzTest {
+class XmlAutorChatControllerIdempotenzTest {
 
     @Autowired
     private XmlDokumentService xmlDokumentService;
@@ -38,16 +35,10 @@ class XmlAutorRestControllerIdempotenzTest {
     @Autowired
     private XmlDokumentRepository xmlDokumentRepository;
 
-    private Autor autor;
-
     @BeforeEach
     void setUp() {
         xmlDokumentRepository.deleteAll();
         authorRepository.deleteAll();
-
-        autor = new Autor();
-        autor.setName("Test Autor");
-        autor = authorRepository.save(autor);
     }
 
     @AfterEach
@@ -59,6 +50,11 @@ class XmlAutorRestControllerIdempotenzTest {
     @Test
     @DisplayName("PUT ist idempotent - zweimaliges PUT erstellt nur ein Dokument")
     void putXml_idempotent_twiceCreatesOnlyOneDocument() {
+        Autor autor = new Autor();
+        autor.setName("Test Autor");
+        autor.setAuthorEmbedding(new float[1024]);
+        autor = authorRepository.save(autor);
+
         XmlDokument created = xmlDokumentService.saveXml(autor.getId(), "test.xml", "<test>daten</test>");
         
         Optional<XmlDokument> firstUpdate = xmlDokumentService.updateXml(autor.getId(), created.getId(), "test.xml", "<test>daten</test>");
@@ -74,6 +70,11 @@ class XmlAutorRestControllerIdempotenzTest {
     @Test
     @DisplayName("PUT mit unterschiedlichen Inhalten aktualisiert bestehendes Dokument")
     void putXml_differentContent_updatesExistingDocument() {
+        Autor autor = new Autor();
+        autor.setName("Test Autor");
+        autor.setAuthorEmbedding(new float[1024]);
+        autor = authorRepository.save(autor);
+
         XmlDokument created = xmlDokumentService.saveXml(autor.getId(), "test.xml", "<test>daten</test>");
         
         Optional<XmlDokument> update = xmlDokumentService.updateXml(autor.getId(), created.getId(), "updated.xml", "<updated>neue daten</updated>");
@@ -81,7 +82,7 @@ class XmlAutorRestControllerIdempotenzTest {
 
         List<XmlDokument> allXml = xmlDokumentRepository.findAll();
         assertThat(allXml).hasSize(1);
-        assertThat(allXml.get(0).getDateiname()).isEqualTo("updated.xml");
-        assertThat(allXml.get(0).getInhalt()).isEqualTo("<updated>neue daten</updated>");
+        assertThat(allXml.getFirst().getDateiname()).isEqualTo("updated.xml");
+        assertThat(allXml.getFirst().getInhalt()).isEqualTo("<updated>neue daten</updated>");
     }
 }

@@ -11,16 +11,19 @@ import it.gdorsi.repository.model.Vertrag;
 import it.gdorsi.repository.model.VertragStatus;
 import it.gdorsi.service.VertragOperations;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class VertragTool implements VertragOperations {
 
     private final VertragRepository repository;
     private final EmbeddingModel embeddingModel;
+
+    public VertragTool(VertragRepository repository, EmbeddingModel embeddingModel) {
+        this.repository = repository;
+        this.embeddingModel = embeddingModel;
+    }
 
     @Override
     @Transactional

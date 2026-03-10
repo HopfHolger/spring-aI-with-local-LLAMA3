@@ -17,26 +17,18 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.web.client.RestClient;
 
 import it.gdorsi.service.tool.VertragTool;
+import it.gdorsi.service.tool.XmlTool;
 
 @Configuration
 public class AiConfig {
 
     @Bean
     @Primary
-    public VectorStore vectorStore(JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
-        return PgVectorStore.builder(jdbcTemplate, embeddingModel)
-                .dimensions(1024)            // Dein mxbai-embed-large Wert
-                .distanceType(PgVectorStore.PgDistanceType.COSINE_DISTANCE)
-                .initializeSchema(true)
-                .build();
-    }
-
-
-    @Bean
-    ChatClient chatClient(ChatClient.Builder builder) {
+    public ChatClient chatClient(ChatClient.Builder builder, List<ToolCallback> contractToolCallbacks) {
         // Hier wird der moderne Client mit der .prompt() API erzeugt
         return builder
                 .defaultSystem("Du bist ein Experte für Cloud-Architektur.")
+                .defaultToolCallbacks(contractToolCallbacks)
                 .build();
     }
 
@@ -51,12 +43,24 @@ public class AiConfig {
     }
 
     @Bean
-    public List<ToolCallback> contractToolCallbacks(VertragTool vertragTools) {
+    public List<ToolCallback> contractToolCallbacks(VertragTool vertragTools, XmlTool xmlTool) {
         // Erzeugt sauber die Callbacks aus deinem Interface/Component
-        return List.of(MethodToolCallbackProvider.builder()
+        ToolCallback[] vertragCallbacks = MethodToolCallbackProvider.builder()
                 .toolObjects(vertragTools)
                 .build()
-                .getToolCallbacks());
+                .getToolCallbacks();
+        
+        ToolCallback[] xmlCallbacks = MethodToolCallbackProvider.builder()
+                .toolObjects(xmlTool)
+                .build()
+                .getToolCallbacks();
+        
+        // Combine both arrays into a single list
+        List<ToolCallback> allCallbacks = new java.util.ArrayList<>();
+        allCallbacks.addAll(java.util.Arrays.asList(vertragCallbacks));
+        allCallbacks.addAll(java.util.Arrays.asList(xmlCallbacks));
+        
+        return allCallbacks;
     }
 
 }

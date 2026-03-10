@@ -2,6 +2,9 @@ package it.gdorsi.service;
 
 import org.springframework.ai.tool.annotation.Tool;
 
+import it.gdorsi.service.response.XmlListResponse;
+import it.gdorsi.service.response.XmlResponse;
+
 public interface XmlOperations {
 
     @Tool(description = "Speichert ein XML-Dokument für einen existierenden Autor")
@@ -11,5 +14,14 @@ public interface XmlOperations {
     String deleteXmlByAutor(String autorName);
 
     @Tool(description = "Gibt alle XML-Dokumente eines Autors zurück")
-    String getXmlByAutor(String autorName);
+    XmlListResponse getXmlByAutor(String autorName);
+
+    @Tool(description = "Gibt ein spezifisches XML-Dokument nach ID zurück")
+    XmlResponse getXmlById(String autorName, Long xmlId);
+
+    @Tool(description = "Aktualisiert ein existierendes XML-Dokument")
+    XmlResponse updateXml(String autorName, Long xmlId, String dateiname, String xmlInhalt);
+
+    @Tool(description = "Löscht ein spezifisches XML-Dokument nach ID")
+    String deleteXmlById(String autorName, Long xmlId);
 }

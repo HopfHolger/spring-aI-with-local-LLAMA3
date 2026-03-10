@@ -75,4 +75,10 @@ public class XmlDokumentService {
                 .flatMap(a -> xmlDokumentRepository.findByAutorId(a.getId()).stream())
                 .toList();
     }
+
+    public String getAutorNameById(Long autorId) {
+        return authorRepository.findById(autorId)
+                .map(Autor::getName)
+                .orElse(null);
+    }
 }

@@ -9,7 +9,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
+
+import it.gdorsi.repository.model.type.NullSafeVectorType;
 
 
 @Entity
@@ -25,8 +28,8 @@ public class Autor {
 
     // Das Feld für die semantische Repräsentation der Bio oder Expertise
     @Column(columnDefinition = "vector(1024)") // Dimension abhängig vom Modell - nicht ändern!
-    @JdbcTypeCode(SqlTypes.VECTOR) // Dies mappt das float[] korrekt auf pgvector
-    private float[] authorEmbedding;
+    @Type(NullSafeVectorType.class) // Custom Type für NULL-sichere Vector-Verarbeitung
+    private float[] authorEmbedding = new float[0];
 
     // 1. Pflicht für JPA: Leerer Konstruktor
     public Autor() {

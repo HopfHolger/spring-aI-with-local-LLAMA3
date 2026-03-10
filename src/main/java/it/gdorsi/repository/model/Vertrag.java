@@ -8,7 +8,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.math.BigDecimal;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
+
+import it.gdorsi.repository.model.type.NullSafeVectorType;
 
 @Data
 @Entity
@@ -33,8 +36,8 @@ public class Vertrag {
     @Column(columnDefinition = "TEXT")
     private String bemerkung;
 
-    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Type(NullSafeVectorType.class)
     @Column(name = "vertrag_embedding", columnDefinition = "vector(1024)")
-    private float[] vertragEmbedding = new float[1024];
+    private float[] vertragEmbedding = new float[0];
 }
 

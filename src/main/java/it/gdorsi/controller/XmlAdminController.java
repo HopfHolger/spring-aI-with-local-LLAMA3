@@ -2,7 +2,9 @@ package it.gdorsi.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,9 +23,11 @@ import it.gdorsi.service.XmlDokumentService;
 public class XmlAdminController {
 
     private final XmlDokumentService xmlDokumentService;
+    private final ChatClient chatClient;
 
-    public XmlAdminController(XmlDokumentService xmlDokumentService) {
+    public XmlAdminController(XmlDokumentService xmlDokumentService, ChatClient chatClient) {
         this.xmlDokumentService = xmlDokumentService;
+        this.chatClient = chatClient;
     }
 
     @GetMapping("/admin/xml")
@@ -85,5 +89,44 @@ public class XmlAdminController {
         return ResponseEntity.ok()
                 .header("HX-Trigger", "updateXmlList")
                 .body("");
+    }
+
+    @PostMapping("/admin/xml/chat")
+    public ResponseEntity<String> analyzeXmlWithAi(
+            @RequestParam("xmlId") Long xmlId,
+            @RequestParam("question") String question) {
+        
+        Optional<XmlDokument> xmlOpt = xmlDokumentService.findById(xmlId);
+        if (xmlOpt.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body("<div class='text-red-600'>❌ Fehler: XML-Dokument nicht gefunden</div>");
+        }
+
+        XmlDokument xml = xmlOpt.get();
+        String xmlContent = xml.getInhalt();
+        String xmlPreview = xmlContent.length() > 500 ? xmlContent.substring(0, 500) + "..." : xmlContent;
+        
+        try {
+            String response = chatClient.prompt()
+                .user("Analysiere dieses XML-Dokument: " + xml.getDateiname() + 
+                      "\n\nXML-Inhalt (Auszug):\n" + xmlPreview + 
+                      "\n\nFrage: " + question + 
+                      "\n\nAntworte auf Deutsch und sei präzise.")
+                .call()
+                .content();
+
+            String formattedResponse = "<div class='bg-purple-50 p-4 rounded-lg border border-purple-200'>" +
+                    "<div class='flex items-center gap-2 mb-2'>" +
+                    "<span class='text-purple-600'>✨</span>" +
+                    "<span class='font-bold text-purple-700'>KI-Analyse für " + xml.getDateiname() + "</span>" +
+                    "</div>" +
+                    "<div class='text-gray-800'>" + response.replace("\n", "<br>") + "</div>" +
+                    "</div>";
+
+            return ResponseEntity.ok(formattedResponse);
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body("<div class='text-red-600'>❌ Fehler bei der KI-Analyse: " + e.getMessage() + "</div>");
+        }
     }
 }
