@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import it.gdorsi.repository.AuthorRepository;
 import it.gdorsi.repository.XmlDokumentRepository;
@@ -28,15 +27,6 @@ public class XmlDokumentService {
         return xmlDokumentRepository.save(xmlDokument);
     }
 
-    public List<XmlDokument> findByAutorId(Long autorId) {
-        return xmlDokumentRepository.findByAutorId(autorId);
-    }
-
-    public Optional<XmlDokument> findByIdAndAutorId(Long xmlId, Long autorId) {
-        return xmlDokumentRepository.findById(xmlId)
-                .filter(d -> d.getAutor().getId().equals(autorId));
-    }
-
     public Optional<XmlDokument> updateXml(Long autorId, Long xmlId, String dateiname, String inhalt) {
         return xmlDokumentRepository.findById(xmlId)
                 .filter(d -> d.getAutor().getId().equals(autorId))
@@ -45,16 +35,6 @@ public class XmlDokumentService {
                     xmlDokument.setInhalt(inhalt);
                     return xmlDokumentRepository.save(xmlDokument);
                 });
-    }
-
-    public boolean deleteXml(Long autorId, Long xmlId) {
-        return xmlDokumentRepository.findById(xmlId)
-                .filter(d -> d.getAutor().getId().equals(autorId))
-                .map(xmlDokument -> {
-                    xmlDokumentRepository.delete(xmlDokument);
-                    return true;
-                })
-                .orElse(false);
     }
 
     public Optional<XmlDokument> findById(Long id) {

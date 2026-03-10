@@ -35,7 +35,6 @@ import it.gdorsi.repository.AuthorRepository;
 import it.gdorsi.repository.model.Autor;
 import it.gdorsi.repository.model.XmlDokument;
 import it.gdorsi.service.XmlDokumentService;
-import it.gdorsi.service.XmlOperations;
 import it.gdorsi.service.response.XmlListResponse;
 import it.gdorsi.service.response.XmlResponse;
 
@@ -51,9 +50,6 @@ class XmlAutorChatControllerTest {
 
 
     @Mock
-    private XmlOperations xmlOperations;
-
-    @Mock
     private XmlDokumentService xmlDokumentService;
 
     private XmlAutorChatController xmlAutorChatController;
@@ -67,7 +63,6 @@ class XmlAutorChatControllerTest {
         // Erstelle Controller direkt mit Mocks
         xmlAutorChatController = new XmlAutorChatController(
             chatClient, 
-            xmlOperations, 
             xmlDokumentService
         );
 

@@ -26,14 +26,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Controller
-@RequestMapping("/admin/vertraege")
 public class VertragController {
 
-    private final VertragRepository repository;
+    private static final Logger log = LoggerFactory.getLogger(VertragController.class);
+    
     private final ChatModel chatModel;           // KI Modell direkt
     private final VectorStore vectorStore;       // Vektor-DB für RAG
+    private final VertragRepository repository;
     private final List<ToolCallback> toolCallbacks; // Deine Interface-Tools
 
     public VertragController(VertragRepository repository,
@@ -103,7 +107,7 @@ public class VertragController {
             return "admin :: chatResponse";
 
         } catch (Exception e) {
-            System.out.println(e.getMessage()); // Damit du im Log siehst, was genau schiefgeht
+            log.error("KI-Fehler beim Chat: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "KI-Fehler: " + e.getMessage());
             return "admin :: errorFragment";
         }

@@ -77,11 +77,7 @@ public class VertragTool implements VertragOperations {
                     .map(vertrag -> {
                         if (betrag != null) vertrag.setBetrag(BigDecimal.valueOf(betrag));
                         if (status != null) {
-                            VertragStatus validatedStatus = VertragStatus.fromString(status.name());
-
-                            if (validatedStatus != null) {
-                                vertrag.setStatus(validatedStatus);
-                            }
+                            vertrag.setStatus(status);
                         }
                         repository.save(vertrag);
                         return "Vertrag " + vertragsNummer + " wurde erfolgreich aktualisiert.";

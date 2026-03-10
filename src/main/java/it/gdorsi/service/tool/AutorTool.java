@@ -2,6 +2,8 @@ package it.gdorsi.service.tool;
 
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -25,6 +27,8 @@ import jakarta.transaction.Transactional;
 @Component
 public class AutorTool implements AutorOperations {
 
+    private static final Logger log = LoggerFactory.getLogger(AutorTool.class);
+    
     private final AuthorRepository repository;
     private final EmbeddingModel embeddingModel;
     private final jakarta.validation.Validator validator;
@@ -47,7 +51,7 @@ public class AutorTool implements AutorOperations {
     @Override
     @Transactional
     public String saveAutor(String name, String biografie) {
-        System.out.println("AutorService: " + name);
+        log.info("AutorService: {}", name);
         AutorRequest request = new AutorRequest(name, biografie);
         var violations = validator.validate(request);
         if (!violations.isEmpty()) {

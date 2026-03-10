@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import it.gdorsi.service.XmlDokumentService;
-import it.gdorsi.service.XmlOperations;
 import it.gdorsi.service.response.XmlListResponse;
 import it.gdorsi.service.response.XmlResponse;
 
@@ -34,7 +33,6 @@ public class XmlAutorChatController {
     private final ObjectMapper objectMapper;
 
     public XmlAutorChatController(ChatClient chatClient,
-                                 XmlOperations xmlOperations,
                                  XmlDokumentService xmlDokumentService) {
         this.chatClient = chatClient;
         this.xmlDokumentService = xmlDokumentService;
