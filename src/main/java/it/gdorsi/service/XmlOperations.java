@@ -27,4 +27,19 @@ public interface XmlOperations {
 
     @Tool(description = "Sucht ähnliche XML-Dokumente basierend auf einer semantischen Anfrage")
     XmlListResponse searchSimilarXml(String query, int limit);
+    
+    @Tool(description = "Analysiert ein XML-Dokument und gibt strukturierte Informationen zurück")
+    String analyzeXml(String autorName, Long xmlId);
+    
+    @Tool(description = "Vergleicht zwei XML-Dokumente und zeigt Unterschiede")
+    String compareXml(String autorName, Long xmlId1, Long xmlId2);
+    
+    @Tool(description = "Validiert XML-Syntax und gibt Fehler zurück")
+    String validateXml(String autorName, Long xmlId);
+    
+    @Tool(description = "Extrahiert spezifische Elemente aus XML basierend auf XPath")
+    String extractXmlElements(String autorName, Long xmlId, String xpath);
+    
+    @Tool(description = "Transformiert XML mit XSLT oder anderen Regeln")
+    String transformXml(String autorName, Long xmlId, String transformationRules);
 }

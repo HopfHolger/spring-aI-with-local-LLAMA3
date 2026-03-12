@@ -134,7 +134,7 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
-            <version>5.5.1</version>
+            <version>4.5.1</version>
             <scope>test</scope>
         </dependency>
         <!-- Force eine aktuelle Version von Commons Lang3 -->

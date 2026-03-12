@@ -5,14 +5,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
-import org.hibernate.annotations.Type;
+import jakarta.persistence.PrePersist;
 
 import it.gdorsi.repository.model.type.NullSafeVectorType;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "xml_dokument")
@@ -34,6 +34,9 @@ public class XmlDokument {
     @ManyToOne
     @JoinColumn(name = "autor_id", nullable = false)
     private Autor autor;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     public XmlDokument() {
     }
@@ -83,5 +86,18 @@ public class XmlDokument {
 
     public void setAutor(Autor autor) {
         this.autor = autor;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
     }
 }

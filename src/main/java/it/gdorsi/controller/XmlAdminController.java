@@ -18,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import it.gdorsi.repository.model.Autor;
 import it.gdorsi.repository.model.XmlDokument;
 import it.gdorsi.service.XmlDokumentService;
-import it.gdorsi.service.XmlOperations;
 import it.gdorsi.service.response.XmlListResponse;
 
 @Controller
@@ -26,12 +25,10 @@ public class XmlAdminController {
 
     private final XmlDokumentService xmlDokumentService;
     private final ChatClient chatClient;
-    private final XmlOperations xmlOperations;
 
-    public XmlAdminController(XmlDokumentService xmlDokumentService, ChatClient chatClient, XmlOperations xmlOperations) {
+    public XmlAdminController(XmlDokumentService xmlDokumentService, ChatClient chatClient) {
         this.xmlDokumentService = xmlDokumentService;
         this.chatClient = chatClient;
-        this.xmlOperations = xmlOperations;
     }
 
     @GetMapping("/admin/xml")
@@ -140,7 +137,7 @@ public class XmlAdminController {
             @RequestParam(value = "limit", defaultValue = "5") int limit) {
         
         try {
-            XmlListResponse searchResults = xmlOperations.searchSimilarXml(query, limit);
+            XmlListResponse searchResults = xmlDokumentService.searchSimilarXml(query, limit);
             
             if (searchResults.dokumente().isEmpty()) {
                 return ResponseEntity.ok(
@@ -199,7 +196,7 @@ public class XmlAdminController {
         
         try {
             // 1. Ähnliche XML-Dokumente finden
-            XmlListResponse searchResults = xmlOperations.searchSimilarXml(query, limit);
+            XmlListResponse searchResults = xmlDokumentService.searchSimilarXml(query, limit);
             
             if (searchResults.dokumente().isEmpty()) {
                 return ResponseEntity.ok(

@@ -212,6 +212,55 @@
             </div>
         </div>
 
+        <!-- Bereich 4: XML Tool-Chat (Neuer Bereich) -->
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl shadow-md border-l-4 border-indigo-500">
+            <h2 class="text-xl font-bold mb-4 text-indigo-700">
+                <span>🛠️</span> XML Tool-Chat (Experten-Modus)
+            </h2>
+            
+            <!-- Kontext-Auswahl -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Kontext auswählen:</label>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" class="context-btn px-3 py-1.5 rounded-lg border border-indigo-300 bg-white text-indigo-700 hover:bg-indigo-50 text-sm font-medium transition" data-context="ANALYSIS">📊 Analyse</button>
+                    <button type="button" class="context-btn px-3 py-1.5 rounded-lg border border-indigo-300 bg-white text-indigo-700 hover:bg-indigo-50 text-sm font-medium transition" data-context="COMPARISON">🔍 Vergleich</button>
+                    <button type="button" class="context-btn px-3 py-1.5 rounded-lg border border-indigo-300 bg-white text-indigo-700 hover:bg-indigo-50 text-sm font-medium transition" data-context="VALIDATION">✅ Validierung</button>
+                    <button type="button" class="context-btn px-3 py-1.5 rounded-lg border border-indigo-300 bg-white text-indigo-700 hover:bg-indigo-50 text-sm font-medium transition" data-context="EXTRACTION">📋 Extraktion</button>
+                    <button type="button" class="context-btn px-3 py-1.5 rounded-lg border border-indigo-300 bg-white text-indigo-700 hover:bg-indigo-50 text-sm font-medium transition" data-context="TRANSFORMATION">🔄 Transformation</button>
+                    <button type="button" class="context-btn active px-3 py-1.5 rounded-lg border border-indigo-300 bg-indigo-600 text-white text-sm font-medium transition" data-context="GENERAL">💬 Allgemein</button>
+                </div>
+            </div>
+            
+            <!-- Chat Interface -->
+            <form hx-post="/admin/xml/tool-chat"
+                  hx-target="#tool-chat-response"
+                  hx-indicator="#tool-chat-indicator">
+                <input type="hidden" name="contextType" id="context-type" value="GENERAL">
+                
+                <div class="flex gap-2">
+                    <input type="text" name="question" 
+                           placeholder="Frage stellen oder XML-Operation anfordern..."
+                           class="flex-1 border border-indigo-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <button type="submit" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-medium">
+                        Tool ausführen
+                    </button>
+                </div>
+                
+                <div id="tool-chat-indicator" class="htmx-indicator mt-2 flex items-center gap-2">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                    <span class="text-sm font-medium">KI führt Tool-Operation aus...</span>
+                </div>
+            </form>
+            
+            <div id="tool-chat-response" class="mt-4 space-y-4">
+                <!-- Tool-Responses erscheinen hier -->
+            </div>
+            
+            <div class="mt-4 text-xs text-indigo-500">
+                <p>💡 <strong>Experten-Modus:</strong> Nutze spezialisierte XML-Tools für Analyse, Vergleich, Validierung und mehr.</p>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -336,6 +385,54 @@
         currentXmlId = null;
         currentXmlName = null;
     }
+
+    // Tool-Chat Kontext-Management
+    document.addEventListener('DOMContentLoaded', function() {
+        const contextButtons = document.querySelectorAll('.context-btn');
+        const contextTypeInput = document.getElementById('context-type');
+        
+        contextButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Aktiven Button zurücksetzen
+                contextButtons.forEach(btn => {
+                    btn.classList.remove('active', 'bg-indigo-600', 'text-white');
+                    btn.classList.add('bg-white', 'text-indigo-700');
+                });
+                
+                // Neuen aktiven Button setzen
+                this.classList.remove('bg-white', 'text-indigo-700');
+                this.classList.add('active', 'bg-indigo-600', 'text-white');
+                
+                // Kontext-Typ aktualisieren
+                const context = this.getAttribute('data-context');
+                contextTypeInput.value = context;
+                
+                // Tooltip für Kontext-Info
+                const contextInfo = {
+                    'ANALYSIS': '📊 XML-Analyse: Struktur, Größe, Elemente',
+                    'COMPARISON': '🔍 XML-Vergleich: Unterschiede zwischen Dokumenten',
+                    'VALIDATION': '✅ XML-Validierung: Syntax und Struktur prüfen',
+                    'EXTRACTION': '📋 XPath-Extraktion: Spezifische Elemente extrahieren',
+                    'TRANSFORMATION': '🔄 XML-Transformation: Regeln anwenden',
+                    'GENERAL': '💬 Allgemein: Alle Tools verfügbar'
+                };
+                
+                console.log('Kontext geändert zu:', context, contextInfo[context]);
+            });
+        });
+        
+        // Formular-Input-Fokus
+        const toolChatInput = document.querySelector('input[name="question"]');
+        if (toolChatInput) {
+            toolChatInput.addEventListener('focus', function() {
+                this.parentElement.classList.add('ring-2', 'ring-indigo-300');
+            });
+            
+            toolChatInput.addEventListener('blur', function() {
+                this.parentElement.classList.remove('ring-2', 'ring-indigo-300');
+            });
+        }
+    });
 
     function copyXmlContent() {
         const preElement = document.querySelector('pre');

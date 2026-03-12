@@ -9,11 +9,15 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
 @TestConfiguration
+@EnableAutoConfiguration(exclude = {
+    org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration.class
+})
 public class TestConfig {
 
     @Bean
@@ -21,11 +25,15 @@ public class TestConfig {
     public EmbeddingModel embeddingModel() {
         EmbeddingModel mockModel = Mockito.mock(EmbeddingModel.class);
 
-        // Standard-Verhalten: Gib immer einen simplen Test-Vektor zurück
-        float[] dummyVector = new float[]{0.1f, 0.2f, 0.3f};
+        // Standard-Verhalten: Gib immer einen simplen Test-Vektor zurück (1024 Dimensionen für pgvector)
+        float[] dummyVector = new float[1024];
+        for (int i = 0; i < dummyVector.length; i++) {
+            dummyVector[i] = (float) Math.random() * 0.1f; // Kleine Zufallswerte
+        }
 
         when(mockModel.embed(anyString())).thenReturn(dummyVector);
         // Falls dein VectorStore auch Dokumente batch-verarbeitet:
+        // embed(Document) gibt float[] zurück
         when(mockModel.embed(any(Document.class))).thenReturn(dummyVector);
 
         return mockModel;

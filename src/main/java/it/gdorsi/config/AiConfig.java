@@ -13,7 +13,7 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 import it.gdorsi.service.tool.VertragTool;
-import it.gdorsi.service.tool.XmlTool;
+import it.gdorsi.service.XmlDokumentService;
 
 @Configuration
 public class AiConfig {
@@ -39,7 +39,7 @@ public class AiConfig {
     }
 
     @Bean
-    public List<ToolCallback> contractToolCallbacks(VertragTool vertragTools, XmlTool xmlTool) {
+    public List<ToolCallback> contractToolCallbacks(VertragTool vertragTools, XmlDokumentService xmlDokumentService) {
         // Erzeugt sauber die Callbacks aus deinem Interface/Component
         ToolCallback[] vertragCallbacks = MethodToolCallbackProvider.builder()
                 .toolObjects(vertragTools)
@@ -47,7 +47,7 @@ public class AiConfig {
                 .getToolCallbacks();
         
         ToolCallback[] xmlCallbacks = MethodToolCallbackProvider.builder()
-                .toolObjects(xmlTool)
+                .toolObjects(xmlDokumentService)
                 .build()
                 .getToolCallbacks();
         

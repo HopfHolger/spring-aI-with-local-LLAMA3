@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 
 @Controller
+@RequestMapping("/admin/vertraege")
 public class VertragController {
 
     private static final Logger log = LoggerFactory.getLogger(VertragController.class);

@@ -17,9 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.HtmlUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import it.gdorsi.service.XmlDokumentService;
 import it.gdorsi.service.response.XmlListResponse;
 import it.gdorsi.service.response.XmlResponse;
@@ -30,13 +27,11 @@ public class XmlAutorChatController {
 
     private final ChatClient chatClient;
     private final XmlDokumentService xmlDokumentService;
-    private final ObjectMapper objectMapper;
 
     public XmlAutorChatController(ChatClient chatClient,
                                  XmlDokumentService xmlDokumentService) {
         this.chatClient = chatClient;
         this.xmlDokumentService = xmlDokumentService;
-        this.objectMapper = new ObjectMapper();
     }
 
     @PostMapping
@@ -61,12 +56,7 @@ public class XmlAutorChatController {
         }
 
         try {
-            String response = chatClient.prompt()
-                .user("Hole alle XML-Dokumente für Autor " + autorName)
-                .call()
-                .content();
-
-            XmlListResponse xmlListResponse = objectMapper.readValue(response, XmlListResponse.class);
+            XmlListResponse xmlListResponse = xmlDokumentService.getXmlByAutor(autorName);
             
             if (xmlListResponse.status().startsWith("FEHLER")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -76,9 +66,6 @@ public class XmlAutorChatController {
             }
             
             return ResponseEntity.ok(xmlListResponse.dokumente());
-        } catch (JsonProcessingException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Fehler beim Parsen der Response: " + HtmlUtils.htmlEscape(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Fehler beim Abrufen der XML-Dokumente: " + HtmlUtils.htmlEscape(e.getMessage()));
@@ -97,12 +84,7 @@ public class XmlAutorChatController {
         }
 
         try {
-            String response = chatClient.prompt()
-                .user("Hole XML-Dokument mit ID " + xmlId + " für Autor " + autorName)
-                .call()
-                .content();
-
-            XmlResponse xmlResponse = objectMapper.readValue(response, XmlResponse.class);
+            XmlResponse xmlResponse = xmlDokumentService.getXmlById(autorName, xmlId);
             
             if (xmlResponse.status().startsWith("FEHLER")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -110,9 +92,6 @@ public class XmlAutorChatController {
             }
             
             return ResponseEntity.ok(xmlResponse);
-        } catch (JsonProcessingException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Fehler beim Parsen der Response: " + HtmlUtils.htmlEscape(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Fehler beim Abrufen des XML-Dokuments: " + HtmlUtils.htmlEscape(e.getMessage()));
@@ -135,13 +114,7 @@ public class XmlAutorChatController {
         String dateiname = file.getOriginalFilename();
 
         try {
-            String response = chatClient.prompt()
-                .user("Aktualisiere XML-Dokument mit ID " + xmlId + " für Autor " + autorName + 
-                      " mit Dateiname " + dateiname + " und Inhalt: " + inhalt.substring(0, Math.min(100, inhalt.length())) + "...")
-                .call()
-                .content();
-
-            XmlResponse xmlResponse = objectMapper.readValue(response, XmlResponse.class);
+            XmlResponse xmlResponse = xmlDokumentService.updateXml(autorName, xmlId, dateiname, inhalt);
             
             if (xmlResponse.status().startsWith("FEHLER")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -149,9 +122,6 @@ public class XmlAutorChatController {
             }
             
             return ResponseEntity.ok("XML aktualisiert: " + HtmlUtils.htmlEscape(dateiname));
-        } catch (JsonProcessingException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Fehler beim Parsen der Response: " + HtmlUtils.htmlEscape(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Fehler beim Aktualisieren des XML-Dokuments: " + HtmlUtils.htmlEscape(e.getMessage()));
@@ -170,11 +140,8 @@ public class XmlAutorChatController {
         }
 
         try {
-            String response = chatClient.prompt()
-                .user("Lösche XML-Dokument mit ID " + xmlId + " für Autor " + autorName)
-                .call()
-                .content();
-
+            String response = xmlDokumentService.deleteXmlById(autorName, xmlId);
+            
             if (response.startsWith("FEHLER")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(HtmlUtils.htmlEscape(response));

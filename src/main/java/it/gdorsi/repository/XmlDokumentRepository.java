@@ -14,4 +14,10 @@ public interface XmlDokumentRepository extends JpaRepository<XmlDokument, Long> 
     List<XmlDokument> findByAutor(Autor autor);
 
     void deleteByAutorId(Long autorId);
+    
+    default java.util.Optional<XmlDokument> findByAutorNameAndId(String autorName, Long xmlId) {
+        // Diese Methode muss in der Service-Implementierung überschrieben werden
+        // oder wir müssen eine Query-Methode hinzufügen
+        throw new UnsupportedOperationException("Methode nicht implementiert");
+    }
 }

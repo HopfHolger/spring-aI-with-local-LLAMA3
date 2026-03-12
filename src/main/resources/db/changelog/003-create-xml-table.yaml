@@ -26,7 +26,7 @@ databaseChangeLog:
               - column:
                   name: xml_embedding
                   type: "vector(1024)"
-              - column:
+               - column:
                   name: autor_id
                   type: BIGINT
                   constraints:
@@ -34,6 +34,10 @@ databaseChangeLog:
                     foreignKeyName: fk_xml_autor
                     referencedTableName: authors
                     references: id
+               - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
         - createIndex:
             indexName: idx_xml_autor_id
             tableName: xml_dokument

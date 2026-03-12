@@ -1,22 +1,26 @@
 package it.gdorsi.e2e;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
+import config.TestConfig;
 import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import it.gdorsi.repository.AuthorRepository;
 import it.gdorsi.repository.XmlDokumentRepository;
 import it.gdorsi.repository.model.Autor;
@@ -26,8 +30,10 @@ import it.gdorsi.repository.model.Autor;
  * Testet die komplette API mit realem Spring Boot Server.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(TestConfig.class)
 @ActiveProfiles("test")
-@Disabled("E2E-Tests werden später mit korrekter RestAssured-Konfiguration aktiviert")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+
 class XmlAutorChatControllerE2EIT {
 
     @LocalServerPort
@@ -45,8 +51,7 @@ class XmlAutorChatControllerE2EIT {
 
     @BeforeEach
     void setUp() {
-        RestAssured.port = port;
-        RestAssured.basePath = "/api";
+        RestAssured.baseURI = "http://localhost:" + port + "/api";
         
         // Einen Test-Autor in der Datenbank erstellen
         testAutor = new Autor();
@@ -92,7 +97,6 @@ class XmlAutorChatControllerE2EIT {
 
         // Dann alle XMLs abrufen
         given()
-            .contentType(ContentType.JSON)
         .when()
             .get("/autoren/{autorId}/xml", autorId)
         .then()
@@ -116,7 +120,6 @@ class XmlAutorChatControllerE2EIT {
         // Da wir die ID nicht kennen, testen wir einfach, dass der Endpoint antwortet
         // In einer echten E2E-Umgebung würden wir die ID aus einer vorherigen Response extrahieren
         given()
-            .contentType(ContentType.JSON)
         .when()
             .get("/autoren/{autorId}/xml/{xmlId}", autorId, 1L)
         .then()
@@ -174,7 +177,6 @@ class XmlAutorChatControllerE2EIT {
         Long nonExistentAutorId = 99999L;
         
         given()
-            .contentType(ContentType.JSON)
         .when()
             .get("/autoren/{autorId}/xml", nonExistentAutorId)
         .then()
@@ -188,7 +190,6 @@ class XmlAutorChatControllerE2EIT {
         Long nonExistentXmlId = 99999L;
         
         given()
-            .contentType(ContentType.JSON)
         .when()
             .get("/autoren/{autorId}/xml/{xmlId}", autorId, nonExistentXmlId)
         .then()
